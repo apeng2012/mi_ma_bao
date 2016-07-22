@@ -51,20 +51,17 @@
 		<Device>
 			<Add option="$device=cortex-m3" />
 			<Add option="$lscript=./STM32F103XB_FLASH.ld" />
-			<Add option="$stack=0x0200" />
-			<Add option="$heap=0x0000" />
+			<Add option="$stack=0x0400" />
+			<Add option="$heap=0x0200" />
 		</Device>
 		<Compiler>
 			<Add option="-mfloat-abi=soft" />
 			<Add option="-fno-strict-aliasing" />
-			<Add symbol="STM32F103TB" />
-			<Add symbol="STM32F10X_MD" />
-			<Add symbol="USE_STDPERIPH_DRIVER" />
+			<Add symbol="USE_HAL_DRIVER" />
+			<Add symbol="STM32F103xB" />
 			<Add directory=".\inc" />
 			<Add directory=".\src" />
 			<Add directory=".\cmsis" />
-			<Add directory=".\SPL\inc" />
-			<Add directory=".\SPL\src" />
 		</Compiler>
 		<Linker>
 			<Add option="-eb_lib=n" />
@@ -78,6 +75,8 @@
 		<Unit filename="inc\stm32f1xx_hal_conf.h" />
 		<Unit filename="inc\stm32f1xx_it.h" />
 		<Unit filename="inc\system_stm32f1xx.h" />
+		<Unit filename="inc\usbd_conf.h" />
+		<Unit filename="inc\usbd_desc.h" />
 		<Unit filename="src\main.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -90,24 +89,65 @@
 		<Unit filename="src\system_stm32f1xx.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="src\usbd_conf.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\usbd_desc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="STM32_USB_Device_Library\Class\HID\Inc\usbd_hid.h" />
+		<Unit filename="STM32_USB_Device_Library\Class\HID\Src\usbd_hid.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="STM32_USB_Device_Library\Core\Inc\usbd_core.h" />
+		<Unit filename="STM32_USB_Device_Library\Core\Inc\usbd_def.h" />
+		<Unit filename="STM32_USB_Device_Library\Core\Src\usbd_core.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="STM32_USB_Device_Library\Core\Src\usbd_ctlreq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="STM32_USB_Device_Library\Core\Src\usbd_ioreq.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="STM32F103XB_FLASH.ld" />
 		<Unit filename="STM32F1xx_HAL_Driver\Inc\Legacy\stm32_hal_legacy.h" />
 		<Unit filename="STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal.h" />
 		<Unit filename="STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_cortex.h" />
+		<Unit filename="STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_dma.h" />
+		<Unit filename="STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_dma_ex.h" />
 		<Unit filename="STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_flash.h" />
 		<Unit filename="STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_flash_ex.h" />
 		<Unit filename="STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_gpio.h" />
+		<Unit filename="STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_pcd.h" />
+		<Unit filename="STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_pcd_ex.h" />
 		<Unit filename="STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_rcc.h" />
+		<Unit filename="STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_rcc_ex.h" />
 		<Unit filename="STM32F1xx_HAL_Driver\Src\stm32f1xx_hal.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_cortex.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_dma.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_gpio.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_pcd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_pcd_ex.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_rcc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_rcc_ex.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="STM32F1xx_HAL_Driver\Src\stm32f1xx_ll_usb.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Extensions>

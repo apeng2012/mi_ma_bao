@@ -38,6 +38,7 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include "stm32f1xx_hal.h"
 #include "stm32f1xx_it.h"
 
 /** @addtogroup STM32F1xx_HAL_Examples
@@ -52,7 +53,7 @@
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-
+extern PCD_HandleTypeDef hpcd;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -166,13 +167,24 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
-  * @brief  This function handles PPP interrupt request.
+  * @brief  This function handles USB Handler.
   * @param  None
   * @retval None
   */
-/*void PPP_IRQHandler(void)
+void USB_LP_CAN1_RX0_IRQHandler(void)
 {
-}*/
+  HAL_PCD_IRQHandler(&hpcd);
+}
+
+/**
+  * @brief  This function handles USB WakeUp interrupt request.
+  * @param  None
+  * @retval None
+  */
+void USBWakeUp_IRQHandler(void)
+{
+  __HAL_USB_WAKEUP_EXTI_CLEAR_FLAG();
+}
 
 
 /**

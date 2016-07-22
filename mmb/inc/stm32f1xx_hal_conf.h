@@ -59,7 +59,7 @@
 #define HAL_CORTEX_MODULE_ENABLED
 //#define HAL_CRC_MODULE_ENABLED
 //#define HAL_DAC_MODULE_ENABLED
-//#define HAL_DMA_MODULE_ENABLED
+#define HAL_DMA_MODULE_ENABLED
 //#define HAL_ETH_MODULE_ENABLED
 #define HAL_FLASH_MODULE_ENABLED
 #define HAL_GPIO_MODULE_ENABLED
@@ -71,7 +71,7 @@
 //#define HAL_NAND_MODULE_ENABLED
 //#define HAL_NOR_MODULE_ENABLED
 //#define HAL_PCCARD_MODULE_ENABLED
-//#define HAL_PCD_MODULE_ENABLED
+#define HAL_PCD_MODULE_ENABLED
 //#define HAL_PWR_MODULE_ENABLED
 #define HAL_RCC_MODULE_ENABLED
 //#define HAL_RTC_MODULE_ENABLED
@@ -90,6 +90,7 @@
   *        This value is used by the RCC HAL module to compute the system frequency
   *        (when HSE is used as system clock source, directly or through the PLL).
   */
+#define HSE_VALUE    ((uint32_t)16000000)
 #if !defined  (HSE_VALUE)
 #if defined(USE_STM3210C_EVAL)
   #define HSE_VALUE    ((uint32_t)25000000) /*!< Value of the External oscillator in Hz */
@@ -133,7 +134,7 @@
   * @brief This is the HAL system configuration section
   */
 #define  VDD_VALUE                    ((uint32_t)3300) /*!< Value of VDD in mv */
-#define  TICK_INT_PRIORITY            ((uint32_t)0x000F)    /*!< tick interrupt priority */
+#define  TICK_INT_PRIORITY            ((uint32_t)0x00)    /*!< tick interrupt priority */
 #define  USE_RTOS                     0
 #define  PREFETCH_ENABLE              1
 
