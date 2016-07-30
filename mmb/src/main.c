@@ -15,6 +15,7 @@
 #include "usbd_core.h"
 #include "usbd_desc.h"
 #include "usbd_hid.h"
+#include "usbKB.h"
 
 #define CURSOR_STEP     5
 
@@ -53,7 +54,7 @@ static void Error_Handler(void)
 
 /**
   * @brief  System Clock Configuration
-  *         The system Clock is configured as follow : 
+  *         The system Clock is configured as follow :
   *            System Clock source            = PLL (HSE)
   *            SYSCLK(Hz)                     = 72000000
   *            HCLK(Hz)                       = 72000000
@@ -92,8 +93,8 @@ void SystemClock_Config(void)
   rccperiphclkinit.PeriphClockSelection = RCC_PERIPHCLK_USB;
   rccperiphclkinit.UsbClockSelection = RCC_USBPLLCLK_DIV1_5;
   HAL_RCCEx_PeriphCLKConfig(&rccperiphclkinit);
-  
-  /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2 
+
+  /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2
   clocks dividers */
   clkinitstruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
   clkinitstruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
@@ -141,6 +142,8 @@ int main(void)
     led_gpio_init();
 
     SystemClock_Config();
+
+    usbKB_init();
 
     USBD_Init(&USBD_Device, &HID_Desc, 0);
 

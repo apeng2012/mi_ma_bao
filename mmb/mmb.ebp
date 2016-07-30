@@ -77,11 +77,15 @@
 		<Unit filename="inc\system_stm32f1xx.h" />
 		<Unit filename="inc\usbd_conf.h" />
 		<Unit filename="inc\usbd_desc.h" />
+		<Unit filename="inc\usbKB.h" />
 		<Unit filename="src\main.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src\startup_stm32f103xb.s">
 			<Option compilerVar="ASM" />
+		</Unit>
+		<Unit filename="src\stm32f1xx_hal_msp.c">
+			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src\stm32f1xx_it.c">
 			<Option compilerVar="CC" />
@@ -93,6 +97,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src\usbd_desc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\usbKB.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="STM32_USB_Device_Library\Class\HID\Inc\usbd_hid.h" />
@@ -123,6 +130,8 @@
 		<Unit filename="STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_pcd_ex.h" />
 		<Unit filename="STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_rcc.h" />
 		<Unit filename="STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_rcc_ex.h" />
+		<Unit filename="STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_tim.h" />
+		<Unit filename="STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_tim_ex.h" />
 		<Unit filename="STM32F1xx_HAL_Driver\Src\stm32f1xx_hal.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -145,6 +154,12 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_rcc_ex.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_tim.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_tim_ex.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="STM32F1xx_HAL_Driver\Src\stm32f1xx_ll_usb.c">
@@ -189,6 +204,15 @@
 				</target_debugging_settings>
 			</debugger>
 			<envvars />
+			<DoxyBlocks>
+				<comment_style block="0" line="0" />
+				<doxyfile_project />
+				<doxyfile_build />
+				<doxyfile_warnings />
+				<doxyfile_output />
+				<doxyfile_dot />
+				<general />
+			</DoxyBlocks>
 		</Extensions>
 	</Project>
 </EmBitz_project_file>

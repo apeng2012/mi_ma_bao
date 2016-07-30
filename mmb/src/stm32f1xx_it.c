@@ -54,6 +54,8 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 extern PCD_HandleTypeDef hpcd;
+extern TIM_HandleTypeDef    TimHandle;
+
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -186,6 +188,15 @@ void USBWakeUp_IRQHandler(void)
   __HAL_USB_WAKEUP_EXTI_CLEAR_FLAG();
 }
 
+/**
+  * @brief  This function handles TIM interrupt request.
+  * @param  None
+  * @retval None
+  */
+void TIM2_IRQHandler(void)
+{
+  HAL_TIM_IRQHandler(&TimHandle);
+}
 
 /**
   * @}
