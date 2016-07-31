@@ -3,6 +3,8 @@
 
 TIM_HandleTypeDef TimHandle;
 
+uint8_t gTimFlag = 0;
+
 void usbKB_init(void) {
     TimHandle.Instance = TIM2;
     TimHandle.Init.ClockDivision = 0;
@@ -20,7 +22,15 @@ void usbKB_init(void) {
   * @param  htim : TIM handle
   * @retval None
   */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_6);
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+    __HAL_TIM_SET_COUNTER(htim, 0);
+    if (gTimFlag) {
+        gTimFlag = 0;
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+        __HAL_TIM_SET_AUTORELOAD(htim, 5000-1);
+    } else {
+        gTimFlag = 1;
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+        __HAL_TIM_SET_AUTORELOAD(htim, 10000-1);
+    }
 }
