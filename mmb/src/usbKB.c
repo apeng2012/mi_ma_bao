@@ -1,9 +1,18 @@
 #include "usbKB.h"
+#include "usbd_hid.h"
 
-
+extern USBD_HandleTypeDef USBD_Device;
 TIM_HandleTypeDef TimHandle;
 
-uint8_t gTimFlag = 0;
+static uint8_t KB_USBBuf[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+static char KB_strBuf[40];
+static char *pKB_str = NULL;
+static uint8_t len_KB_str = 0;
+
+static enum KB_STATE {
+	BTN_Down,
+	BTN_Up,
+}KB_state;
 
 void usbKB_init(void) {
     TimHandle.Instance = TIM2;
@@ -13,7 +22,57 @@ void usbKB_init(void) {
     TimHandle.Init.Prescaler = 72000 - 1;
     TimHandle.Init.RepetitionCounter = 0;
 	HAL_TIM_Base_Init(&TimHandle);
+}
 
+static void char2KBID(char ch) {
+	memset(KB_USBBuf, 0, 8);
+	KB_USBBuf[2] = 0x2c; // space
+
+	if ((ch>='a') && (ch<='z')) {
+		KB_USBBuf[2] = ch - 'a' + 4;
+	} else if ((ch>='A') && (ch<='Z')) {
+		KB_USBBuf[2] = ch - 'A' + 4;
+		KB_USBBuf[0] = 0x02;
+	} else if ((ch>='1') && (ch <='9')) {
+		KB_USBBuf[2] = ch - '1' + 0x1E;
+	} else if (ch == '0') {
+		KB_USBBuf[2] = 0x27;
+	} else if (ch == ':') {
+		KB_USBBuf[0] = 0x02;//left shift
+		KB_USBBuf[2] = 0x33;//:
+    } else if (ch == '!') {
+		KB_USBBuf[0] = 0x02;//left shift
+		KB_USBBuf[2] = 0x1E;//!
+	} else if (ch == '/') {
+		KB_USBBuf[2] = 0x38;///
+	} else if (ch == '.') {
+		KB_USBBuf[2] = 0x37;//.
+	} else if (ch == '\r') {
+		KB_USBBuf[2] = 0x28;//Return
+	} else if (ch == '\1') {
+		KB_USBBuf[0] = 0x08; // Windows
+		KB_USBBuf[2] = 0x15; // r
+	}
+}
+
+void USB_KB_type(const char *str, uint8_t len) {
+	if (pKB_str != NULL) {
+		return;
+	}
+	if (len == 0) {
+        return;
+	}
+
+	strcpy(KB_strBuf, str);
+	KB_state = BTN_Up;
+	pKB_str = KB_strBuf;
+
+	char2KBID(*pKB_str++);
+	len_KB_str = len - 1;
+	USBD_HID_SendReport(&USBD_Device, KB_USBBuf, HID_EPIN_SIZE);
+
+	__HAL_TIM_SET_COUNTER(&TimHandle, 0);
+	__HAL_TIM_SET_AUTORELOAD(&TimHandle, 50-1); // 50ms
 	HAL_TIM_Base_Start_IT(&TimHandle);
 }
 
@@ -24,13 +83,41 @@ void usbKB_init(void) {
   */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     __HAL_TIM_SET_COUNTER(htim, 0);
-    if (gTimFlag) {
-        gTimFlag = 0;
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-        __HAL_TIM_SET_AUTORELOAD(htim, 5000-1);
-    } else {
-        gTimFlag = 1;
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-        __HAL_TIM_SET_AUTORELOAD(htim, 10000-1);
+
+    switch (KB_state) {
+    case BTN_Down:
+        if ((len_KB_str == 0) || (pKB_str == NULL)) {
+            HAL_TIM_Base_Stop_IT(htim);
+            return;
+        }
+        KB_state = BTN_Up;
+
+        char2KBID(*pKB_str);
+        pKB_str++;
+        len_KB_str--;
+        USBD_HID_SendReport(&USBD_Device, KB_USBBuf, HID_EPIN_SIZE);
+
+        __HAL_TIM_SET_COUNTER(&TimHandle, 0);
+        __HAL_TIM_SET_AUTORELOAD(&TimHandle, 50-1); // 50ms
+        HAL_TIM_Base_Start_IT(&TimHandle);
+        break;
+
+    case BTN_Up:
+        memset(KB_USBBuf, 0, 8);
+        USBD_HID_SendReport(&USBD_Device, KB_USBBuf, HID_EPIN_SIZE);
+        if (len_KB_str == 0) {
+            pKB_str = NULL;
+            HAL_TIM_Base_Stop_IT(htim);
+        } else {
+            KB_state = BTN_Down;
+            __HAL_TIM_SET_COUNTER(&TimHandle, 0);
+            __HAL_TIM_SET_AUTORELOAD(&TimHandle, 200-1); // 200ms
+            HAL_TIM_Base_Start_IT(&TimHandle);
+        }
+        break;
+    default:
+        pKB_str = NULL;
+        HAL_TIM_Base_Stop_IT(htim);
+        break;
     }
 }

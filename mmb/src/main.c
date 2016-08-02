@@ -17,10 +17,8 @@
 #include "usbd_hid.h"
 #include "usbKB.h"
 
-#define CURSOR_STEP     5
 
 USBD_HandleTypeDef USBD_Device;
-uint8_t HID_Buffer[4];
 
 
 void led_gpio_init(void) {
@@ -109,32 +107,6 @@ void SystemClock_Config(void)
 }
 
 
-/**
-  * @brief  Gets Pointer Data.
-  * @param  pbuf: Pointer to report
-  * @retval None
-  */
-static void GetPointerData(uint8_t *pbuf)
-{
-  static int8_t cnt = 0;
-  int8_t  x = 0, y = 0 ;
-
-  if(cnt++ > 0)
-  {
-    x = CURSOR_STEP;
-  }
-  else
-  {
-    x = -CURSOR_STEP;
-  }
-
-  pbuf[0] = 0;
-  pbuf[1] = x;
-  pbuf[2] = y;
-  pbuf[3] = 0;
-}
-
-
 int main(void)
 {
     HAL_Init();
@@ -151,11 +123,11 @@ int main(void)
 
     USBD_Start(&USBD_Device);
 
+    HAL_Delay(5000);
+    USB_KB_type("Hello world!", 12);
+
     while(1) {
-        HAL_Delay(100);
+        HAL_Delay(1000);
         HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_7);
-        HAL_Delay(100);
-        GetPointerData(HID_Buffer);
-        USBD_HID_SendReport(&USBD_Device, HID_Buffer, 4);
     }
 }
