@@ -1,5 +1,6 @@
 #include "usbKB.h"
 #include "usbd_hid.h"
+#include "keycode.h"
 
 extern USBD_HandleTypeDef USBD_Device;
 TIM_HandleTypeDef TimHandle;
@@ -36,13 +37,48 @@ static void char2KBID(char ch) {
 	} else if ((ch>='1') && (ch <='9')) {
 		KB_USBBuf[2] = ch - '1' + 0x1E;
 	} else if (ch == '0') {
-		KB_USBBuf[2] = 0x27;
-	} else if (ch == ':') {
+		KB_USBBuf[2] = KC_0;
+    } else if (ch == '~') {
 		KB_USBBuf[0] = 0x02;//left shift
-		KB_USBBuf[2] = 0x33;//:
+		KB_USBBuf[2] = KC_NONUS_HASH;
     } else if (ch == '!') {
 		KB_USBBuf[0] = 0x02;//left shift
-		KB_USBBuf[2] = 0x1E;//!
+		KB_USBBuf[2] = KC_1;
+    } else if (ch == '@') {
+		KB_USBBuf[0] = 0x02;//left shift
+		KB_USBBuf[2] = KC_2;
+    } else if (ch == '#') {
+		KB_USBBuf[0] = 0x02;//left shift
+		KB_USBBuf[2] = KC_3;
+    } else if (ch == '$') {
+		KB_USBBuf[0] = 0x02;//left shift
+		KB_USBBuf[2] = KC_4;
+    } else if (ch == '%') {
+		KB_USBBuf[0] = 0x02;//left shift
+		KB_USBBuf[2] = KC_5;
+    } else if (ch == '^') {
+		KB_USBBuf[0] = 0x02;//left shift
+		KB_USBBuf[2] = KC_6;
+    } else if (ch == '&') {
+		KB_USBBuf[0] = 0x02;//left shift
+		KB_USBBuf[2] = KC_7;
+    } else if (ch == '*') {
+		KB_USBBuf[0] = 0x02;//left shift
+		KB_USBBuf[2] = KC_8;
+     } else if (ch == '(') {
+		KB_USBBuf[0] = 0x02;//left shift
+		KB_USBBuf[2] = KC_9;
+    } else if (ch == ')') {
+		KB_USBBuf[0] = 0x02;//left shift
+		KB_USBBuf[2] = KC_0;
+    } else if (ch == '-') {
+		KB_USBBuf[2] = KC_MINUS;
+    } else if (ch == '+') {
+		KB_USBBuf[0] = 0x02;//left shift
+		KB_USBBuf[2] = KC_EQUAL;
+	} else if (ch == ':') {
+		KB_USBBuf[0] = 0x02;//left shift
+		KB_USBBuf[2] = 0x33;
 	} else if (ch == '/') {
 		KB_USBBuf[2] = 0x38;///
 	} else if (ch == '.') {

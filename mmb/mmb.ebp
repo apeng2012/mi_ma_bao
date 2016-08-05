@@ -70,6 +70,7 @@
 		<Unit filename="cmsis\core_cm3.h" />
 		<Unit filename="cmsis\core_cmFunc.h" />
 		<Unit filename="cmsis\core_cmInstr.h" />
+		<Unit filename="inc\keycode.h" />
 		<Unit filename="inc\stm32f103xb.h" />
 		<Unit filename="inc\stm32f1xx.h" />
 		<Unit filename="inc\stm32f1xx_hal_conf.h" />
