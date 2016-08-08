@@ -157,7 +157,7 @@ __ALIGN_BEGIN static uint8_t USBD_HID_CfgDesc[USB_HID_CONFIG_DESC_SIZ]  __ALIGN_
   0x00,         /*bAlternateSetting: Alternate setting*/
   0x01,         /*bNumEndpoints*/
   0x03,         /*bInterfaceClass: HID*/
-  0x01,         /*bInterfaceSubClass : 1=BOOT, 0=no boot*/
+  0x00,         /*bInterfaceSubClass : 1=BOOT, 0=no boot*/
   0x01,         /*nInterfaceProtocol : 0=none, 1=keyboard, 2=mouse*/
   0,            /*iInterface: Index of string descriptor*/
   /******************** Descriptor of keyboard HID **********************/
@@ -214,11 +214,12 @@ __ALIGN_BEGIN static uint8_t USBD_HID_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_
   0x00,
 };
 
-__ALIGN_BEGIN static uint8_t HID_MOUSE_ReportDesc[HID_KEYBOARD_REPORT_DESC_SIZE]  __ALIGN_END =
+__ALIGN_BEGIN static uint8_t HID_KEYBOARD_ReportDesc[HID_KEYBOARD_REPORT_DESC_SIZE]  __ALIGN_END =
 {
     0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
 	0x09, 0x06,                    // USAGE (Keyboard)
 	0xa1, 0x01,                    // COLLECTION (Application)
+	0x85, 0x01,                    //   REPORT_ID(1)
 	0x05, 0x07,                    //   USAGE_PAGE (Keyboard)
 	0x19, 0xe0,                    //   USAGE_MINIMUM (Keyboard LeftControl)
 	0x29, 0xe7,                    //   USAGE_MAXIMUM (Keyboard Right GUI)
@@ -358,7 +359,7 @@ static uint8_t  USBD_HID_Setup (USBD_HandleTypeDef *pdev,
       if( req->wValue >> 8 == HID_REPORT_DESC)
       {
         len = MIN(HID_KEYBOARD_REPORT_DESC_SIZE , req->wLength);
-        pbuf = HID_MOUSE_ReportDesc;
+        pbuf = HID_KEYBOARD_ReportDesc;
       }
       else if( req->wValue >> 8 == HID_DESCRIPTOR_TYPE)
       {

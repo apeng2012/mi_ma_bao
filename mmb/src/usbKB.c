@@ -5,7 +5,7 @@
 extern USBD_HandleTypeDef USBD_Device;
 TIM_HandleTypeDef TimHandle;
 
-static uint8_t KB_USBBuf[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+static uint8_t KB_USBBuf[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 static char KB_strBuf[40];
 static char *pKB_str = NULL;
 static uint8_t len_KB_str = 0;
@@ -26,68 +26,69 @@ void usbKB_init(void) {
 }
 
 static void char2KBID(char ch) {
-	memset(KB_USBBuf, 0, 8);
-	KB_USBBuf[2] = 0x2c; // space
+	memset(KB_USBBuf, 0, 9);
+	KB_USBBuf[0] = 1; // report id
+	KB_USBBuf[3] = 0x2c; // space
 
 	if ((ch>='a') && (ch<='z')) {
-		KB_USBBuf[2] = ch - 'a' + 4;
+		KB_USBBuf[3] = ch - 'a' + 4;
 	} else if ((ch>='A') && (ch<='Z')) {
-		KB_USBBuf[2] = ch - 'A' + 4;
-		KB_USBBuf[0] = 0x02;
+		KB_USBBuf[3] = ch - 'A' + 4;
+		KB_USBBuf[1] = 0x02;
 	} else if ((ch>='1') && (ch <='9')) {
-		KB_USBBuf[2] = ch - '1' + 0x1E;
+		KB_USBBuf[3] = ch - '1' + 0x1E;
 	} else if (ch == '0') {
-		KB_USBBuf[2] = KC_0;
+		KB_USBBuf[3] = KC_0;
     } else if (ch == '~') {
-		KB_USBBuf[0] = 0x02;//left shift
-		KB_USBBuf[2] = KC_NONUS_HASH;
+		KB_USBBuf[1] = 0x02;//left shift
+		KB_USBBuf[3] = KC_NONUS_HASH;
     } else if (ch == '!') {
-		KB_USBBuf[0] = 0x02;//left shift
-		KB_USBBuf[2] = KC_1;
+		KB_USBBuf[1] = 0x02;//left shift
+		KB_USBBuf[3] = KC_1;
     } else if (ch == '@') {
-		KB_USBBuf[0] = 0x02;//left shift
-		KB_USBBuf[2] = KC_2;
+		KB_USBBuf[1] = 0x02;//left shift
+		KB_USBBuf[3] = KC_2;
     } else if (ch == '#') {
-		KB_USBBuf[0] = 0x02;//left shift
-		KB_USBBuf[2] = KC_3;
+		KB_USBBuf[1] = 0x02;//left shift
+		KB_USBBuf[3] = KC_3;
     } else if (ch == '$') {
-		KB_USBBuf[0] = 0x02;//left shift
-		KB_USBBuf[2] = KC_4;
+		KB_USBBuf[1] = 0x02;//left shift
+		KB_USBBuf[3] = KC_4;
     } else if (ch == '%') {
-		KB_USBBuf[0] = 0x02;//left shift
-		KB_USBBuf[2] = KC_5;
+		KB_USBBuf[1] = 0x02;//left shift
+		KB_USBBuf[3] = KC_5;
     } else if (ch == '^') {
-		KB_USBBuf[0] = 0x02;//left shift
-		KB_USBBuf[2] = KC_6;
+		KB_USBBuf[1] = 0x02;//left shift
+		KB_USBBuf[3] = KC_6;
     } else if (ch == '&') {
-		KB_USBBuf[0] = 0x02;//left shift
-		KB_USBBuf[2] = KC_7;
+		KB_USBBuf[1] = 0x02;//left shift
+		KB_USBBuf[3] = KC_7;
     } else if (ch == '*') {
-		KB_USBBuf[0] = 0x02;//left shift
-		KB_USBBuf[2] = KC_8;
+		KB_USBBuf[1] = 0x02;//left shift
+		KB_USBBuf[3] = KC_8;
      } else if (ch == '(') {
-		KB_USBBuf[0] = 0x02;//left shift
-		KB_USBBuf[2] = KC_9;
+		KB_USBBuf[1] = 0x02;//left shift
+		KB_USBBuf[3] = KC_9;
     } else if (ch == ')') {
-		KB_USBBuf[0] = 0x02;//left shift
-		KB_USBBuf[2] = KC_0;
+		KB_USBBuf[1] = 0x02;//left shift
+		KB_USBBuf[3] = KC_0;
     } else if (ch == '-') {
-		KB_USBBuf[2] = KC_MINUS;
+		KB_USBBuf[3] = KC_MINUS;
     } else if (ch == '+') {
-		KB_USBBuf[0] = 0x02;//left shift
-		KB_USBBuf[2] = KC_EQUAL;
+		KB_USBBuf[1] = 0x02;//left shift
+		KB_USBBuf[3] = KC_EQUAL;
 	} else if (ch == ':') {
-		KB_USBBuf[0] = 0x02;//left shift
-		KB_USBBuf[2] = 0x33;
+		KB_USBBuf[1] = 0x02;//left shift
+		KB_USBBuf[3] = 0x33;
 	} else if (ch == '/') {
-		KB_USBBuf[2] = 0x38;///
+		KB_USBBuf[3] = 0x38;///
 	} else if (ch == '.') {
-		KB_USBBuf[2] = 0x37;//.
+		KB_USBBuf[3] = 0x37;//.
 	} else if (ch == '\r') {
-		KB_USBBuf[2] = 0x28;//Return
+		KB_USBBuf[3] = 0x28;//Return
 	} else if (ch == '\1') {
-		KB_USBBuf[0] = 0x08; // Windows
-		KB_USBBuf[2] = 0x15; // r
+		KB_USBBuf[1] = 0x08; // Windows
+		KB_USBBuf[3] = 0x15; // r
 	}
 }
 
@@ -139,7 +140,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         break;
 
     case BTN_Up:
-        memset(KB_USBBuf, 0, 8);
+        memset(KB_USBBuf, 0, 9);
+        KB_USBBuf[0] = 1;
         USBD_HID_SendReport(&USBD_Device, KB_USBBuf, HID_EPIN_SIZE);
         if (len_KB_str == 0) {
             pKB_str = NULL;
