@@ -178,7 +178,7 @@ __ALIGN_BEGIN static uint8_t USBD_HID_CfgDesc[USB_HID_CONFIG_DESC_SIZ]  __ALIGN_
 
   HID_EPIN_ADDR,     /*bEndpointAddress: Endpoint Address (IN)*/
   0x03,          /*bmAttributes: Interrupt endpoint*/
-  HID_EPIN_SIZE, /*wMaxPacketSize: 4 Byte max */
+  HID_EPIN_MAX_SIZE, /*wMaxPacketSize: 64 Byte max */
   0x00,
   HID_POLLING_INTERVAL,          /*bInterval: Polling Interval (10 ms)*/
   /* 34 */
@@ -239,6 +239,21 @@ __ALIGN_BEGIN static uint8_t HID_KEYBOARD_ReportDesc[HID_KEYBOARD_REPORT_DESC_SI
 	0x19, 0x00,                    //   USAGE_MINIMUM (Reserved (no event indicated))
 	0x29, 0x65,                    //   USAGE_MAXIMUM (Keyboard Application)
 	0x81, 0x00,                    //   INPUT (Data,Ary,Abs)
+
+	0x85, 0x02,                    //   REPORT_ID (2)
+	0x06, 0x00, 0xFF,              //   USAGE_PAGE (Vendor Defined Page 1)
+	0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+	0x26, 0xFF, 0x00,              //   LOGICAL_MAXIMUM (255)
+	0x75, 0x08,                    //   REPORT_SIZE (8)
+	0x95, 0x3F,                    //   REPORT_COUNT (63)
+	0x09, 0x00,                    //   USAGE (Undefined)
+	0x81, 0x00,                    //   INPUT (Data,Ary,Abs)
+	0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+	0x26, 0xFF, 0x00,              //   LOGICAL_MAXIMUM (255)
+	0x75, 0x08,                    //   REPORT_SIZE (8)
+	0x95, 0x3F,                    //   REPORT_COUNT (63)
+	0x09, 0x00,                    //   USAGE (Undefined)
+	0x91, 0x00,                    //   OUTPUT (Data,Ary,Abs)
 	0xc0                           // END_COLLECTION
 };
 
@@ -266,7 +281,7 @@ static uint8_t  USBD_HID_Init (USBD_HandleTypeDef *pdev,
   USBD_LL_OpenEP(pdev,
                  HID_EPIN_ADDR,
                  USBD_EP_TYPE_INTR,
-                 HID_EPIN_SIZE);
+                 HID_EPIN_MAX_SIZE);
 
   pdev->pClassData = USBD_malloc(sizeof (USBD_HID_HandleTypeDef));
 
@@ -293,7 +308,7 @@ static uint8_t  USBD_HID_DeInit (USBD_HandleTypeDef *pdev,
 {
   /* Close HID EPs */
   USBD_LL_CloseEP(pdev,
-                  HID_EPIN_SIZE);
+                  HID_EPIN_ADDR);
 
   /* FRee allocated memory */
   if(pdev->pClassData != NULL)

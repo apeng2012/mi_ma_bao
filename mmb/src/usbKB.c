@@ -106,7 +106,7 @@ void USB_KB_type(const char *str, uint8_t len) {
 
 	char2KBID(*pKB_str++);
 	len_KB_str = len - 1;
-	USBD_HID_SendReport(&USBD_Device, KB_USBBuf, HID_EPIN_SIZE);
+	USBD_HID_SendReport(&USBD_Device, KB_USBBuf, HID_EPIN_KB_SIZE);
 
 	__HAL_TIM_SET_COUNTER(&TimHandle, 0);
 	__HAL_TIM_SET_AUTORELOAD(&TimHandle, 50-1); // 50ms
@@ -132,7 +132,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         char2KBID(*pKB_str);
         pKB_str++;
         len_KB_str--;
-        USBD_HID_SendReport(&USBD_Device, KB_USBBuf, HID_EPIN_SIZE);
+        USBD_HID_SendReport(&USBD_Device, KB_USBBuf, HID_EPIN_KB_SIZE);
 
         __HAL_TIM_SET_COUNTER(&TimHandle, 0);
         __HAL_TIM_SET_AUTORELOAD(&TimHandle, 50-1); // 50ms
@@ -142,7 +142,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     case BTN_Up:
         memset(KB_USBBuf, 0, 9);
         KB_USBBuf[0] = 1;
-        USBD_HID_SendReport(&USBD_Device, KB_USBBuf, HID_EPIN_SIZE);
+        USBD_HID_SendReport(&USBD_Device, KB_USBBuf, HID_EPIN_KB_SIZE);
         if (len_KB_str == 0) {
             pKB_str = NULL;
             HAL_TIM_Base_Stop_IT(htim);
