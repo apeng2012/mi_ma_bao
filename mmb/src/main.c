@@ -16,9 +16,12 @@
 #include "usbd_desc.h"
 #include "usbd_hid.h"
 #include "usbKB.h"
+#include "usbd_hid.h"
+#include "usbd_customhid_if.h"
 
 
 USBD_HandleTypeDef USBD_Device;
+extern USBD_CUSTOM_HID_ItfTypeDef USBD_CustomHID_fops;
 
 
 void led_gpio_init(void) {
@@ -120,6 +123,8 @@ int main(void)
     USBD_Init(&USBD_Device, &HID_Desc, 0);
 
     USBD_RegisterClass(&USBD_Device, USBD_HID_CLASS);
+
+    USBD_CUSTOM_HID_RegisterInterface(&USBD_Device, &USBD_CustomHID_fops);
 
     USBD_Start(&USBD_Device);
 
