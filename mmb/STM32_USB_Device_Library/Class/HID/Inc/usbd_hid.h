@@ -49,13 +49,16 @@
 /** @defgroup USBD_HID_Exported_Defines
   * @{
   */
-#define HID_EPIN_ADDR                 0x81
-#define HID_EPIN_KB_SIZE              0x09
-#define HID_EPIN_MAX_SIZE             64
+#define HID_KB_EPIN_ADDR              0x81
+#define HID_KB_EPIN_SIZE              0x09
+
+#define HID_CUSTOM_EPIN_ADDR          0x82
+#define HID_CUSTOM_EPIN_SIZE          63
+#define HID_CUSTOM_EPOUT_ADDR         0x02
+#define HID_CUSTOM_EPOUT_SIZE         63
 
 #define USB_HID_CONFIG_DESC_SIZ       34
 #define USB_HID_DESC_SIZ              9
-#define HID_KEYBOARD_REPORT_DESC_SIZE 78
 
 #define HID_DESCRIPTOR_TYPE           0x21
 #define HID_REPORT_DESC               0x22
@@ -84,12 +87,22 @@ typedef enum
 }
 HID_StateTypeDef;
 
+typedef struct _USBD_CUSTOM_HID_Itf
+{
+  uint8_t                  *pReport;
+  int8_t (* Init)          (void);
+  int8_t (* DeInit)        (void);
+  int8_t (* OutEvent)      (uint8_t*);
+
+}USBD_CUSTOM_HID_ItfTypeDef;
 
 typedef struct
 {
+  uint8_t              Report_buf[USBD_CUSTOMHID_OUTREPORT_BUF_SIZE];
   uint32_t             Protocol;
   uint32_t             IdleState;
   uint32_t             AltSetting;
+  uint32_t             IsReportAvailable;
   HID_StateTypeDef     state;
 }
 USBD_HID_HandleTypeDef;
@@ -124,7 +137,8 @@ uint8_t USBD_HID_SendReport (USBD_HandleTypeDef *pdev,
                                  uint8_t *report,
                                  uint16_t len);
 
-uint8_t USBD_HID_GetPollingInterval (USBD_HandleTypeDef *pdev);
+uint8_t  USBD_CUSTOM_HID_RegisterInterface  (USBD_HandleTypeDef   *pdev,
+                                             USBD_CUSTOM_HID_ItfTypeDef *fops);
 
 /**
   * @}

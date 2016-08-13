@@ -16,9 +16,12 @@
 #include "usbd_desc.h"
 #include "usbd_hid.h"
 #include "usbKB.h"
+#include "usbd_hid.h"
+#include "usbd_customhid_if.h"
 
 
 USBD_HandleTypeDef USBD_Device;
+extern USBD_CUSTOM_HID_ItfTypeDef USBD_CustomHID_fops;
 
 
 void led_gpio_init(void) {
@@ -109,7 +112,6 @@ void SystemClock_Config(void)
 
 int main(void)
 {
-    uint8_t buf[64];
     HAL_Init();
 
     led_gpio_init();
@@ -122,19 +124,15 @@ int main(void)
 
     USBD_RegisterClass(&USBD_Device, USBD_HID_CLASS);
 
+    USBD_CUSTOM_HID_RegisterInterface(&USBD_Device, &USBD_CustomHID_fops);
+
     USBD_Start(&USBD_Device);
 
-    //HAL_Delay(5000);
-    //USB_KB_type("Hello world!~@#$%^&*()-+:.", 26);
-    buf[0] = 2;
-    buf[1] = 0x55;
-    buf[2] = 0xAA;
-    buf[3] = 0;
+    HAL_Delay(5000);
+    USB_KB_type("Hello world!~@#$%^&*()-+:.", 26);
 
     while(1) {
-        HAL_Delay(5000);
-        buf[3]++;
-        USBD_HID_SendReport(&USBD_Device, buf, HID_EPIN_MAX_SIZE);
+        HAL_Delay(1000);
         HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_7);
     }
 }

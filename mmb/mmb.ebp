@@ -103,7 +103,11 @@
 		<Unit filename="src\usbKB.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="STM32_USB_Device_Library\Class\HID\Inc\usbd_customhid_if.h" />
 		<Unit filename="STM32_USB_Device_Library\Class\HID\Inc\usbd_hid.h" />
+		<Unit filename="STM32_USB_Device_Library\Class\HID\Src\usbd_customhid_if.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="STM32_USB_Device_Library\Class\HID\Src\usbd_hid.c">
 			<Option compilerVar="CC" />
 		</Unit>

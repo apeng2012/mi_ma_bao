@@ -108,6 +108,10 @@ static uint8_t  *USBD_HID_GetCfgDesc (uint16_t *length);
 static uint8_t  *USBD_HID_GetDeviceQualifierDesc (uint16_t *length);
 
 static uint8_t  USBD_HID_DataIn (USBD_HandleTypeDef *pdev, uint8_t epnum);
+
+static uint8_t  USBD_HID_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum);
+
+static uint8_t USBD_HID_EP0_RxReady(USBD_HandleTypeDef *pdev);
 /**
   * @}
   */
@@ -122,9 +126,9 @@ USBD_ClassTypeDef  USBD_HID =
   USBD_HID_DeInit,
   USBD_HID_Setup,
   NULL, /*EP0_TxSent*/
-  NULL, /*EP0_RxReady*/
+  USBD_HID_EP0_RxReady, /*EP0_RxReady*/
   USBD_HID_DataIn, /*DataIn*/
-  NULL, /*DataOut*/
+  USBD_HID_DataOut, /*DataOut*/
   NULL, /*SOF */
   NULL,
   NULL,
@@ -169,16 +173,16 @@ __ALIGN_BEGIN static uint8_t USBD_HID_CfgDesc[USB_HID_CONFIG_DESC_SIZ]  __ALIGN_
   0x00,         /*bCountryCode: Hardware target country*/
   0x01,         /*bNumDescriptors: Number of HID class descriptors to follow*/
   0x22,         /*bDescriptorType: Report descriptor type.*/
-  HID_KEYBOARD_REPORT_DESC_SIZE,/*wItemLength: Total length of Report descriptor*/
+  USBD_CUSTOM_HID_REPORT_DESC_SIZE,/*wItemLength: Total length of Report descriptor*/
   0x00,
   /******************** Descriptor of keyboard endpoint *****************/
   /* 27 */
   0x07,          /*bLength: Endpoint Descriptor size*/
   USB_DESC_TYPE_ENDPOINT, /*bDescriptorType:*/
 
-  HID_EPIN_ADDR,     /*bEndpointAddress: Endpoint Address (IN)*/
+  HID_KB_EPIN_ADDR,     /*bEndpointAddress: Endpoint Address (IN)*/
   0x03,          /*bmAttributes: Interrupt endpoint*/
-  HID_EPIN_MAX_SIZE, /*wMaxPacketSize: 64 Byte max */
+  HID_KB_EPIN_SIZE, /*wMaxPacketSize: 9 Byte max */
   0x00,
   HID_POLLING_INTERVAL,          /*bInterval: Polling Interval (10 ms)*/
   /* 34 */
@@ -195,7 +199,7 @@ __ALIGN_BEGIN static uint8_t USBD_HID_Desc[USB_HID_DESC_SIZ]  __ALIGN_END  =
   0x00,         /*bCountryCode: Hardware target country*/
   0x01,         /*bNumDescriptors: Number of HID class descriptors to follow*/
   0x22,         /*bDescriptorType*/
-  HID_KEYBOARD_REPORT_DESC_SIZE,/*wItemLength: Total length of Report descriptor*/
+  USBD_CUSTOM_HID_REPORT_DESC_SIZE,/*wItemLength: Total length of Report descriptor*/
   0x00,
 };
 
@@ -212,49 +216,6 @@ __ALIGN_BEGIN static uint8_t USBD_HID_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_
   0x40,
   0x01,
   0x00,
-};
-
-__ALIGN_BEGIN static uint8_t HID_KEYBOARD_ReportDesc[HID_KEYBOARD_REPORT_DESC_SIZE]  __ALIGN_END =
-{
-    0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
-	0x09, 0x06,                    // USAGE (Keyboard)
-	0xa1, 0x01,                    // COLLECTION (Application)
-	0x85, 0x01,                    //   REPORT_ID(1)
-	0x05, 0x07,                    //   USAGE_PAGE (Keyboard)
-	0x19, 0xe0,                    //   USAGE_MINIMUM (Keyboard LeftControl)
-	0x29, 0xe7,                    //   USAGE_MAXIMUM (Keyboard Right GUI)
-	0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
-	0x25, 0x01,                    //   LOGICAL_MAXIMUM (1)
-	0x75, 0x01,                    //   REPORT_SIZE (1)
-	0x95, 0x08,                    //   REPORT_COUNT (8)
-	0x81, 0x02,                    //   INPUT (Data,Var,Abs)
-	0x95, 0x01,                    //   REPORT_COUNT (1)
-	0x75, 0x08,                    //   REPORT_SIZE (8)
-	0x81, 0x03,                    //   INPUT (Cnst,Var,Abs)
-	0x95, 0x06,                    //   REPORT_COUNT (6)
-	0x75, 0x08,                    //   REPORT_SIZE (8)
-	0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
-	0x25, 0x65,                    //   LOGICAL_MAXIMUM (101)
-	0x05, 0x07,                    //   USAGE_PAGE (Keyboard)
-	0x19, 0x00,                    //   USAGE_MINIMUM (Reserved (no event indicated))
-	0x29, 0x65,                    //   USAGE_MAXIMUM (Keyboard Application)
-	0x81, 0x00,                    //   INPUT (Data,Ary,Abs)
-
-	0x85, 0x02,                    //   REPORT_ID (2)
-	0x06, 0x00, 0xFF,              //   USAGE_PAGE (Vendor Defined Page 1)
-	0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
-	0x26, 0xFF, 0x00,              //   LOGICAL_MAXIMUM (255)
-	0x75, 0x08,                    //   REPORT_SIZE (8)
-	0x95, 0x3F,                    //   REPORT_COUNT (63)
-	0x09, 0x00,                    //   USAGE (Undefined)
-	0x81, 0x00,                    //   INPUT (Data,Ary,Abs)
-	0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
-	0x26, 0xFF, 0x00,              //   LOGICAL_MAXIMUM (255)
-	0x75, 0x08,                    //   REPORT_SIZE (8)
-	0x95, 0x3F,                    //   REPORT_COUNT (63)
-	0x09, 0x00,                    //   USAGE (Undefined)
-	0x91, 0x00,                    //   OUTPUT (Data,Ary,Abs)
-	0xc0                           // END_COLLECTION
 };
 
 /**
@@ -276,12 +237,18 @@ static uint8_t  USBD_HID_Init (USBD_HandleTypeDef *pdev,
                                uint8_t cfgidx)
 {
   uint8_t ret = 0;
-
+  USBD_HID_HandleTypeDef     *hhid;
   /* Open EP IN */
   USBD_LL_OpenEP(pdev,
-                 HID_EPIN_ADDR,
+                 HID_KB_EPIN_ADDR,
                  USBD_EP_TYPE_INTR,
-                 HID_EPIN_MAX_SIZE);
+                 HID_KB_EPIN_SIZE);
+
+  /* Open EP OUT */
+  //USBD_LL_OpenEP(pdev,
+  //               HID_EPOUT_ADDR,
+  //               USBD_EP_TYPE_INTR,
+  //               HID_EPOUT_SIZE);
 
   pdev->pClassData = USBD_malloc(sizeof (USBD_HID_HandleTypeDef));
 
@@ -291,7 +258,13 @@ static uint8_t  USBD_HID_Init (USBD_HandleTypeDef *pdev,
   }
   else
   {
-    ((USBD_HID_HandleTypeDef *)pdev->pClassData)->state = HID_IDLE;
+    hhid = (USBD_HID_HandleTypeDef*) pdev->pClassData;
+
+    hhid->state = HID_IDLE;
+    ((USBD_CUSTOM_HID_ItfTypeDef *)pdev->pUserData)->Init();
+    /* Prepare Out endpoint to receive 1st packet */
+    //USBD_LL_PrepareReceive(pdev, CUSTOM_HID_EPOUT_ADDR, hhid->Report_buf,
+    //                       USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
   }
   return ret;
 }
@@ -308,11 +281,16 @@ static uint8_t  USBD_HID_DeInit (USBD_HandleTypeDef *pdev,
 {
   /* Close HID EPs */
   USBD_LL_CloseEP(pdev,
-                  HID_EPIN_ADDR);
+                  HID_KB_EPIN_ADDR);
+
+  /* Close CUSTOM_HID EP OUT */
+  //USBD_LL_CloseEP(pdev,
+  //                HID_EPOUT_ADDR);
 
   /* FRee allocated memory */
   if(pdev->pClassData != NULL)
   {
+    ((USBD_CUSTOM_HID_ItfTypeDef *)pdev->pUserData)->DeInit();
     USBD_free(pdev->pClassData);
     pdev->pClassData = NULL;
   }
@@ -361,6 +339,12 @@ static uint8_t  USBD_HID_Setup (USBD_HandleTypeDef *pdev,
                         1);
       break;
 
+    case HID_REQ_SET_REPORT:
+      hhid->IsReportAvailable = 1;
+      USBD_CtlPrepareRx (pdev, hhid->Report_buf, (uint8_t)(req->wLength));
+
+      break;
+
     default:
       USBD_CtlError (pdev, req);
       return USBD_FAIL;
@@ -371,10 +355,11 @@ static uint8_t  USBD_HID_Setup (USBD_HandleTypeDef *pdev,
     switch (req->bRequest)
     {
     case USB_REQ_GET_DESCRIPTOR:
+
       if( req->wValue >> 8 == HID_REPORT_DESC)
       {
-        len = MIN(HID_KEYBOARD_REPORT_DESC_SIZE , req->wLength);
-        pbuf = HID_KEYBOARD_ReportDesc;
+        len = MIN(USBD_CUSTOM_HID_REPORT_DESC_SIZE , req->wLength);
+        pbuf = ((USBD_CUSTOM_HID_ItfTypeDef *)pdev->pUserData)->pReport;
       }
       else if( req->wValue >> 8 == HID_DESCRIPTOR_TYPE)
       {
@@ -421,7 +406,7 @@ uint8_t USBD_HID_SendReport     (USBD_HandleTypeDef  *pdev,
     {
       hhid->state = HID_BUSY;
       USBD_LL_Transmit (pdev,
-                        HID_EPIN_ADDR,
+                        HID_KB_EPIN_ADDR,
                         report,
                         len);
     }
@@ -471,6 +456,45 @@ static uint8_t  USBD_HID_DataIn (USBD_HandleTypeDef *pdev,
   return USBD_OK;
 }
 
+/**
+  * @brief  USBD_CUSTOM_HID_DataOut
+  *         handle data OUT Stage
+  * @param  pdev: device instance
+  * @param  epnum: endpoint index
+  * @retval status
+  */
+static uint8_t  USBD_HID_DataOut (USBD_HandleTypeDef *pdev,
+                              uint8_t epnum)
+{
+
+  USBD_HID_HandleTypeDef     *hhid = (USBD_HID_HandleTypeDef*)pdev->pClassData;
+
+  ((USBD_CUSTOM_HID_ItfTypeDef *)pdev->pUserData)->OutEvent(&(hhid->Report_buf[0]));
+
+//  USBD_LL_PrepareReceive(pdev, CUSTOM_HID_EPOUT_ADDR , hhid->Report_buf,
+//                         USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
+
+  return USBD_OK;
+}
+
+/**
+  * @brief  USBD_CUSTOM_HID_EP0_RxReady
+  *         Handles control request data.
+  * @param  pdev: device instance
+  * @retval status
+  */
+uint8_t USBD_HID_EP0_RxReady(USBD_HandleTypeDef *pdev)
+{
+  USBD_HID_HandleTypeDef     *hhid = (USBD_HID_HandleTypeDef*)pdev->pClassData;
+
+  if (hhid->IsReportAvailable == 1)
+  {
+    ((USBD_CUSTOM_HID_ItfTypeDef *)pdev->pUserData)->OutEvent(&(hhid->Report_buf[0]));
+    hhid->IsReportAvailable = 0;
+  }
+
+  return USBD_OK;
+}
 
 /**
 * @brief  DeviceQualifierDescriptor
@@ -484,6 +508,25 @@ static uint8_t  *USBD_HID_GetDeviceQualifierDesc (uint16_t *length)
   return USBD_HID_DeviceQualifierDesc;
 }
 
+/**
+* @brief  USBD_CUSTOM_HID_RegisterInterface
+  * @param  pdev: device instance
+  * @param  fops: CUSTOMHID Interface callback
+  * @retval status
+  */
+uint8_t  USBD_CUSTOM_HID_RegisterInterface  (USBD_HandleTypeDef   *pdev,
+                                             USBD_CUSTOM_HID_ItfTypeDef *fops)
+{
+  uint8_t  ret = USBD_FAIL;
+
+  if(fops != NULL)
+  {
+    pdev->pUserData= fops;
+    ret = USBD_OK;
+  }
+
+  return ret;
+}
 /**
   * @}
   */
