@@ -49,15 +49,15 @@
 /** @defgroup USBD_HID_Exported_Defines
   * @{
   */
-#define HID_KB_EPIN_ADDR              0x81
+#define HID_KB_EPIN_ADDR              0x82
 #define HID_KB_EPIN_SIZE              0x09
 
-#define HID_CUSTOM_EPIN_ADDR          0x82
-#define HID_CUSTOM_EPIN_SIZE          63
-#define HID_CUSTOM_EPOUT_ADDR         0x02
-#define HID_CUSTOM_EPOUT_SIZE         63
+#define HID_CUSTOM_EPIN_ADDR          0x81
+#define HID_CUSTOM_EPIN_SIZE          64
+#define HID_CUSTOM_EPOUT_ADDR         0x01
+#define HID_CUSTOM_EPOUT_SIZE         64
 
-#define USB_HID_CONFIG_DESC_SIZ       34
+#define USB_HID_CONFIG_DESC_SIZ       41
 #define USB_HID_DESC_SIZ              9
 
 #define HID_DESCRIPTOR_TYPE           0x21

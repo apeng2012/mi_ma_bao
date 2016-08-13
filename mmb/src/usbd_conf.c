@@ -28,6 +28,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
 #include "usbd_core.h"
+#include "usbd_hid.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -475,7 +476,7 @@ void USBD_LL_Delay(uint32_t Delay)
   */
 void *USBD_static_malloc(uint32_t size)
 {
-  static uint32_t mem[MAX_STATIC_ALLOC_SIZE];
+  static uint32_t mem[(sizeof(USBD_HID_HandleTypeDef)+3)/4];
   return mem;
 }
 
