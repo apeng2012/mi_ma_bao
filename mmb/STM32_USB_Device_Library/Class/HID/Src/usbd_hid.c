@@ -153,7 +153,7 @@ __ALIGN_BEGIN static uint8_t USBD_HID_CfgDesc[USB_HID_CONFIG_DESC_SIZ]  __ALIGN_
   0xC0,         /*bmAttributes: bus powered */
   0x32,         /*MaxPower 100 mA: this current is used for detecting Vbus*/
 
-  /************** Descriptor of custom interface ************************/
+  /************** Descriptor of keyboard interface **********************/
   /* 09 */
   0x09,         /*bLength: Interface Descriptor size*/
   USB_DESC_TYPE_INTERFACE,/*bDescriptorType: Interface descriptor type*/
@@ -162,9 +162,9 @@ __ALIGN_BEGIN static uint8_t USBD_HID_CfgDesc[USB_HID_CONFIG_DESC_SIZ]  __ALIGN_
   0x02,         /*bNumEndpoints*/
   0x03,         /*bInterfaceClass: HID*/
   0x00,         /*bInterfaceSubClass : 1=BOOT, 0=no boot*/
-  0x00,         /*nInterfaceProtocol : 0=none, 1=keyboard, 2=mouse*/
+  0x01,         /*nInterfaceProtocol : 0=none, 1=keyboard, 2=mouse*/
   0,            /*iInterface: Index of string descriptor*/
-  /******************** Descriptor of custom HID ************************/
+  /******************** Descriptor of keyboard HID **********************/
   /* 18 */
   0x09,         /*bLength: HID Descriptor size*/
   HID_DESCRIPTOR_TYPE, /*bDescriptorType: HID*/
@@ -288,7 +288,7 @@ static uint8_t  USBD_HID_Init (USBD_HandleTypeDef *pdev,
 static uint8_t  USBD_HID_DeInit (USBD_HandleTypeDef *pdev,
                                  uint8_t cfgidx)
 {
-  /* Close HID EPs */
+  /* Close CUSTOM_HID EP IN */
   USBD_LL_CloseEP(pdev,
                   HID_CUSTOM_EPIN_ADDR);
 

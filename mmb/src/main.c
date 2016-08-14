@@ -128,6 +128,9 @@ int main(void)
 
     USBD_Start(&USBD_Device);
 
+    HAL_Delay(5000);
+    USB_KB_type("Hello world!~@#$%^&*()-+:.", 26);
+
     while(1) {
         HAL_Delay(1000);
         HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_7);
