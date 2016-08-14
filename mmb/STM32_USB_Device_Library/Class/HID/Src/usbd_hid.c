@@ -126,7 +126,7 @@ USBD_ClassTypeDef  USBD_HID =
   USBD_HID_DeInit,
   USBD_HID_Setup,
   NULL, /*EP0_TxSent*/
-  USBD_HID_EP0_RxReady, /*EP0_RxReady*/
+  USBD_HID_EP0_RxReady, /*EP0_RxReady*/ /* STATUS STAGE IN */
   USBD_HID_DataIn, /*DataIn*/
   USBD_HID_DataOut, /*DataOut*/
   NULL, /*SOF */
@@ -150,7 +150,7 @@ __ALIGN_BEGIN static uint8_t USBD_HID_CfgDesc[USB_HID_CONFIG_DESC_SIZ]  __ALIGN_
   0x01,         /*bConfigurationValue: Configuration value*/
   0x00,         /*iConfiguration: Index of string descriptor describing
   the configuration*/
-  0xE0,         /*bmAttributes: bus powered and Support Remote Wake-up */
+  0xC0,         /*bmAttributes: bus powered */
   0x32,         /*MaxPower 100 mA: this current is used for detecting Vbus*/
 
   /************** Descriptor of keyboard interface **********************/
@@ -159,7 +159,7 @@ __ALIGN_BEGIN static uint8_t USBD_HID_CfgDesc[USB_HID_CONFIG_DESC_SIZ]  __ALIGN_
   USB_DESC_TYPE_INTERFACE,/*bDescriptorType: Interface descriptor type*/
   0x00,         /*bInterfaceNumber: Number of Interface*/
   0x00,         /*bAlternateSetting: Alternate setting*/
-  0x01,         /*bNumEndpoints*/
+  0x02,         /*bNumEndpoints*/
   0x03,         /*bInterfaceClass: HID*/
   0x00,         /*bInterfaceSubClass : 1=BOOT, 0=no boot*/
   0x01,         /*nInterfaceProtocol : 0=none, 1=keyboard, 2=mouse*/
@@ -175,17 +175,26 @@ __ALIGN_BEGIN static uint8_t USBD_HID_CfgDesc[USB_HID_CONFIG_DESC_SIZ]  __ALIGN_
   0x22,         /*bDescriptorType: Report descriptor type.*/
   USBD_CUSTOM_HID_REPORT_DESC_SIZE,/*wItemLength: Total length of Report descriptor*/
   0x00,
-  /******************** Descriptor of keyboard endpoint *****************/
+  /******************** Descriptor of custom endpoint *****************/
   /* 27 */
   0x07,          /*bLength: Endpoint Descriptor size*/
   USB_DESC_TYPE_ENDPOINT, /*bDescriptorType:*/
 
-  HID_KB_EPIN_ADDR,     /*bEndpointAddress: Endpoint Address (IN)*/
+  HID_CUSTOM_EPIN_ADDR,     /*bEndpointAddress: Endpoint Address (IN)*/
   0x03,          /*bmAttributes: Interrupt endpoint*/
-  HID_KB_EPIN_SIZE, /*wMaxPacketSize: 9 Byte max */
+  HID_CUSTOM_EPIN_SIZE, /*wMaxPacketSize: 64 Byte max */
   0x00,
   HID_POLLING_INTERVAL,          /*bInterval: Polling Interval (10 ms)*/
   /* 34 */
+  0x07,          /*bLength: Endpoint Descriptor size*/
+  USB_DESC_TYPE_ENDPOINT, /*bDescriptorType:*/
+
+  HID_CUSTOM_EPOUT_ADDR,     /*bEndpointAddress: Endpoint Address (OUT)*/
+  0x03,          /*bmAttributes: Interrupt endpoint*/
+  HID_CUSTOM_EPOUT_SIZE, /*wMaxPacketSize: 64 Byte max */
+  0x00,
+  HID_POLLING_INTERVAL,          /*bInterval: Polling Interval (10 ms)*/
+  /* 41 */
 } ;
 
 /* USB HID device Configuration Descriptor */
@@ -240,15 +249,15 @@ static uint8_t  USBD_HID_Init (USBD_HandleTypeDef *pdev,
   USBD_HID_HandleTypeDef     *hhid;
   /* Open EP IN */
   USBD_LL_OpenEP(pdev,
-                 HID_KB_EPIN_ADDR,
+                 HID_CUSTOM_EPIN_ADDR,
                  USBD_EP_TYPE_INTR,
-                 HID_KB_EPIN_SIZE);
+                 HID_CUSTOM_EPIN_SIZE);
 
   /* Open EP OUT */
-  //USBD_LL_OpenEP(pdev,
-  //               HID_EPOUT_ADDR,
-  //               USBD_EP_TYPE_INTR,
-  //               HID_EPOUT_SIZE);
+  USBD_LL_OpenEP(pdev,
+                 HID_CUSTOM_EPOUT_ADDR,
+                 USBD_EP_TYPE_INTR,
+                 HID_CUSTOM_EPOUT_SIZE);
 
   pdev->pClassData = USBD_malloc(sizeof (USBD_HID_HandleTypeDef));
 
@@ -263,14 +272,14 @@ static uint8_t  USBD_HID_Init (USBD_HandleTypeDef *pdev,
     hhid->state = HID_IDLE;
     ((USBD_CUSTOM_HID_ItfTypeDef *)pdev->pUserData)->Init();
     /* Prepare Out endpoint to receive 1st packet */
-    //USBD_LL_PrepareReceive(pdev, CUSTOM_HID_EPOUT_ADDR, hhid->Report_buf,
-    //                       USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
+    USBD_LL_PrepareReceive(pdev, HID_CUSTOM_EPOUT_ADDR, hhid->Report_buf,
+                           USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
   }
   return ret;
 }
 
 /**
-  * @brief  USBD_HID_Init
+  * @brief  USBD_HID_DeInit
   *         DeInitialize the HID layer
   * @param  pdev: device instance
   * @param  cfgidx: Configuration index
@@ -279,13 +288,13 @@ static uint8_t  USBD_HID_Init (USBD_HandleTypeDef *pdev,
 static uint8_t  USBD_HID_DeInit (USBD_HandleTypeDef *pdev,
                                  uint8_t cfgidx)
 {
-  /* Close HID EPs */
+  /* Close CUSTOM_HID EP IN */
   USBD_LL_CloseEP(pdev,
-                  HID_KB_EPIN_ADDR);
+                  HID_CUSTOM_EPIN_ADDR);
 
   /* Close CUSTOM_HID EP OUT */
-  //USBD_LL_CloseEP(pdev,
-  //                HID_EPOUT_ADDR);
+  USBD_LL_CloseEP(pdev,
+                  HID_CUSTOM_EPOUT_ADDR);
 
   /* FRee allocated memory */
   if(pdev->pClassData != NULL)
@@ -406,7 +415,7 @@ uint8_t USBD_HID_SendReport     (USBD_HandleTypeDef  *pdev,
     {
       hhid->state = HID_BUSY;
       USBD_LL_Transmit (pdev,
-                        HID_KB_EPIN_ADDR,
+                        HID_CUSTOM_EPIN_ADDR,
                         report,
                         len);
     }
@@ -471,8 +480,8 @@ static uint8_t  USBD_HID_DataOut (USBD_HandleTypeDef *pdev,
 
   ((USBD_CUSTOM_HID_ItfTypeDef *)pdev->pUserData)->OutEvent(&(hhid->Report_buf[0]));
 
-//  USBD_LL_PrepareReceive(pdev, CUSTOM_HID_EPOUT_ADDR , hhid->Report_buf,
-//                         USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
+  USBD_LL_PrepareReceive(pdev, HID_CUSTOM_EPOUT_ADDR , hhid->Report_buf,
+                         USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
 
   return USBD_OK;
 }
