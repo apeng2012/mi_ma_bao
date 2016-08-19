@@ -77,6 +77,7 @@
 		<Unit filename="inc\stm32f1xx_it.h" />
 		<Unit filename="inc\system_stm32f1xx.h" />
 		<Unit filename="inc\usbd_conf.h" />
+		<Unit filename="inc\usbd_customhid_if.h" />
 		<Unit filename="inc\usbd_desc.h" />
 		<Unit filename="inc\usbKB.h" />
 		<Unit filename="src\main.c">
@@ -97,17 +98,16 @@
 		<Unit filename="src\usbd_conf.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="src\usbd_customhid_if.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="src\usbd_desc.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src\usbKB.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="STM32_USB_Device_Library\Class\HID\Inc\usbd_customhid_if.h" />
 		<Unit filename="STM32_USB_Device_Library\Class\HID\Inc\usbd_hid.h" />
-		<Unit filename="STM32_USB_Device_Library\Class\HID\Src\usbd_customhid_if.c">
-			<Option compilerVar="CC" />
-		</Unit>
 		<Unit filename="STM32_USB_Device_Library\Class\HID\Src\usbd_hid.c">
 			<Option compilerVar="CC" />
 		</Unit>
