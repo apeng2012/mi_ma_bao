@@ -135,7 +135,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         USBD_HID_SendReport(&USBD_Device, KB_USBBuf, HID_KB_SIZE);
 
         __HAL_TIM_SET_COUNTER(&TimHandle, 0);
-        __HAL_TIM_SET_AUTORELOAD(&TimHandle, 50-1); // 50ms
+        __HAL_TIM_SET_AUTORELOAD(&TimHandle, 200-1); // 200ms
         HAL_TIM_Base_Start_IT(&TimHandle);
         break;
 
