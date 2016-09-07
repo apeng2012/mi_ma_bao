@@ -131,6 +131,7 @@ static int8_t CUSTOM_HID_OutEvent  (uint8_t *pBuf)
 
   memcpy(buf, pBuf, USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
   buf[0] = 2; // report id
+  buf[1] = '@';
   USBD_HID_SendReport(&USBD_Device, buf, USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
   return (0);
 }
