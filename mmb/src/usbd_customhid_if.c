@@ -29,6 +29,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_customhid_if.h"
+#include "mima.h"
+
+extern MSG_T gMsg;
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -125,14 +128,22 @@ static int8_t CUSTOM_HID_DeInit(void)
   *         Manage the CUSTOM HID class events
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
   */
-static int8_t CUSTOM_HID_OutEvent  (uint8_t *pBuf)
-{
-  __ALIGN_BEGIN static uint8_t buf[USBD_CUSTOMHID_OUTREPORT_BUF_SIZE] __ALIGN_END;
+static int8_t CUSTOM_HID_OutEvent  (uint8_t *pBuf) {
+    uint8_t tmp;
 
-  memcpy(buf, pBuf, USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
-  buf[0] = 2; // report id
-  buf[1] = '@';
-  USBD_HID_SendReport(&USBD_Device, buf, USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
-  return (0);
+    if ((pBuf[0] == 2) && (pBuf[1] == '@')) {
+        tmp = pBuf[2];
+        tmp = ~tmp;
+        tmp >>= 4;
+        if (tmp == (pBuf[2] & 0x0F)) {
+            gMsg = pBuf[2];
+        } else {
+            msg_rsp_error();
+        }
+    } else {
+      msg_rsp_error();
+    }
+
+    return (0);
 }
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

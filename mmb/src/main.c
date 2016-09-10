@@ -18,7 +18,9 @@
 #include "usbKB.h"
 #include "usbd_hid.h"
 #include "usbd_customhid_if.h"
+#include "mima.h"
 
+extern G_FLAG gFlag;
 
 USBD_HandleTypeDef USBD_Device;
 extern USBD_CUSTOM_HID_ItfTypeDef USBD_CustomHID_fops;
@@ -118,6 +120,8 @@ int main(void)
 
     SystemClock_Config();
 
+    mima_init();
+
     usbKB_init();
 
     USBD_Init(&USBD_Device, &HID_Desc, 0);
@@ -132,5 +136,6 @@ int main(void)
     while(1) {
         HAL_Delay(1000);
         HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_7);
+        mima_loop();
     }
 }

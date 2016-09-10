@@ -71,6 +71,7 @@
 		<Unit filename="cmsis\core_cmFunc.h" />
 		<Unit filename="cmsis\core_cmInstr.h" />
 		<Unit filename="inc\keycode.h" />
+		<Unit filename="inc\mima.h" />
 		<Unit filename="inc\stm32f103xb.h" />
 		<Unit filename="inc\stm32f1xx.h" />
 		<Unit filename="inc\stm32f1xx_hal_conf.h" />
@@ -81,6 +82,9 @@
 		<Unit filename="inc\usbd_desc.h" />
 		<Unit filename="inc\usbKB.h" />
 		<Unit filename="src\main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\mima.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src\startup_stm32f103xb.s">
@@ -144,6 +148,12 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_dma.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_flash.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_flash_ex.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_gpio.c">
