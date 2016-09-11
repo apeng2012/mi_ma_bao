@@ -131,9 +131,8 @@ static int8_t CUSTOM_HID_DeInit(void)
 static int8_t CUSTOM_HID_OutEvent  (uint8_t *pBuf) {
     uint8_t tmp;
 
-    if ((pBuf[0] == 2) && (pBuf[1] == '@')) {
-        tmp = pBuf[2];
-        tmp = ~tmp;
+    if ((pBuf[0] == 2) && (pBuf[1] == '#')) {
+        tmp = ~pBuf[2];
         tmp >>= 4;
         if (tmp == (pBuf[2] & 0x0F)) {
             gMsg = pBuf[2];

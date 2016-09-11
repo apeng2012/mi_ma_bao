@@ -74,10 +74,11 @@ class _HidTransport(object):
         self.hid = None
 
     def _write_chunk(self, chunk):
-        if len(chunk) != 62:
+        l = len(chunk)
+        if l > 62:
             raise Exception("Unexpected data length")
 
-        self.hid.write([2, ord('#')] + chunk)
+        self.hid.write([2, ord('#')] + chunk + [0xFF]*(62-l))
 
     def _read_chunk(self):
         start = time.time()
@@ -102,9 +103,18 @@ class _HidTransport(object):
         if len(data) != 64:
             raise Exception("Unexpected chunk size: %d" % len(data))
 
-        return bytearray(data[2:])
+        return data[2:]
 
 
+class Msg_T(object):
+    """docstring for Msg_T"""
+    MSG_NONE   = 0x00
+    MSG_STATUS = 0xE1
+    MSG_PERMIT = 0xD2
+    MSG_SET_PERMIT = 0xC3
+    MSG_ERROR  = 0xFF
+
+        
 class MiMaBao(_HidTransport):
     """docstring for MiMaBao"""
     def __init__(self):
@@ -113,18 +123,59 @@ class MiMaBao(_HidTransport):
 
     def status(self):
         self._open()
-        self._write_chunk([ord('s'), ord('t')] + [0]*60)
-        self.status_bits = self._read_chunk()[0]
+        self._write_chunk([Msg_T.MSG_STATUS])
+        self.status_bits = self._read_chunk()[1]
         self._close()
+
+    def st_isinitpermit(self):
+        return (self.status_bits & 0x01) == 0x01
+
+    def st_ispermit(self):
+        return (self.status_bits & 0x02) == 0x02
         
     def permit(self, password):
+        self.status()
+        if not self.st_isinitpermit():
+            return None
+
+        self._open()
+        self._write_chunk([Msg_T.MSG_PERMIT] + map(ord, list(password)))
+        tmp = self._read_chunk()[0]
+        self._close()
+
+        if tmp != (~Msg_T.MSG_PERMIT)&0xFF:
+            return False
     	return True
 
-    def ispermit(self):
-    	pass
+    def set_permit(self, password):
+        l = len(password)
+        if l<3 or l>60:
+            raise Exception("password len error")
+
+        self._open()
+        self._write_chunk([Msg_T.MSG_SET_PERMIT] + map(ord, list(password)))
+        tmp = self._read_chunk()[0]
+        self._close()
+
+        if tmp != (~Msg_T.MSG_SET_PERMIT)&0xFF:
+            return False
+        return True
         
 
 if __name__ == '__main__':
     mmb = MiMaBao()
     mmb.status()
-    print mmb.status_bits
+    print "status_bits: 0x%02x" % mmb.status_bits
+
+    rep = mmb.permit("apeng")
+    if rep == None:
+        print "no init password"
+
+        print "set permit..."
+        mmb.set_permit("apeng")
+    elif rep:
+        print "correct password"
+    else:
+        print "wrong password"
+
+

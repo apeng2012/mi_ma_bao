@@ -8,6 +8,7 @@ typedef union {
     struct {
         uint8_t initpermit:1;
         uint8_t permit:1;
+        uint8_t ver:6;
     }s;
 } G_FLAG;
 
@@ -15,6 +16,7 @@ typedef enum {
     MSG_NONE   = 0x00,
     MSG_STATUS = 0xE1,
     MSG_PERMIT = 0xD2,
+    MSG_SET_PERMIT = 0xC3,
     MSG_ERROR  = 0xFF,
 } MSG_T;
 
