@@ -112,6 +112,7 @@ class Msg_T(object):
     MSG_STATUS = 0xE1
     MSG_PERMIT = 0xD2
     MSG_SET_PERMIT = 0xC3
+    MSG_ADD    = 0xB4
     MSG_ERROR  = 0xFF
 
         
@@ -161,6 +162,29 @@ class MiMaBao(_HidTransport):
             return False
         return True
         
+    def add(self, usedto, name, password):
+        lu = len(usedto)
+        if lu<3 or lu>20:
+            raise Exception("usedto len error")
+        ln = len(name)
+        if ln<3 or ln>20:
+            raise Exception("name len error")
+        lp = len(password)
+        if lp<3 or lp>20:
+            raise Exception("password len error")
+
+        self._open()
+        self._write_chunk([Msg_T.MSG_ADD] \
+            + map(ord, list(usedto)) + [0xFF]*(20-lu) \
+            + map(ord, list(name)) + [0xFF]*(20-ln) \
+            + map(ord, list(password)) + [0xFF]*(20-lp) )
+        tmp = self._read_chunk()[0]
+        self._close()
+
+        if tmp != (~Msg_T.MSG_ADD)&0xFF:
+            return False
+        return True
+
 
 if __name__ == '__main__':
     mmb = MiMaBao()

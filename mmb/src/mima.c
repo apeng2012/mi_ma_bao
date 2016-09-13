@@ -14,6 +14,7 @@ extern USBD_HandleTypeDef USBD_Device;
 static void msg_rsp_status(void);
 static void msg_rsp_permit(void);
 static void msg_rsp_set_permit(void);
+static void msg_rsp_add(void);
 
 void mima_init(void) {
     gMsg = MSG_NONE;
@@ -39,6 +40,10 @@ void mima_loop(void) {
         break;
     case MSG_SET_PERMIT:
         msg_rsp_set_permit();
+        gMsg = MSG_NONE;
+        break;
+    case MSG_ADD:
+        msg_rsp_add();
         gMsg = MSG_NONE;
         break;
     default:
@@ -137,6 +142,45 @@ static void msg_rsp_set_permit(void) {
         outBuf[0] = 2; //report_id
         outBuf[1] = '@'; // response flag
         outBuf[2] = (uint8_t)~MSG_SET_PERMIT;
+        USBD_HID_SendReport(&USBD_Device, outBuf, USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
+    }
+}
+
+static void msg_rsp_add(void) {
+    uint32_t *pSrc = (uint32_t *)(&(((USBD_HID_HandleTypeDef*)(USBD_Device.pClassData))->Report_buf[3]));
+    uint32_t PAGEError = 0;
+    uint8_t i;
+    uint32_t addr;
+
+    if (gFlag.s.permit == 0) {
+        PAGEError = 0xFF;
+        goto MSG_RSP_ADD_END;
+    }
+
+    for (addr=MIMA_BASE; addr<MIMA_END; addr+=MIMA_PER_SIZE) {
+        if ((*(uint8_t*)addr) == 0xFF) {
+            break;
+        }
+    }
+    if (addr > MIMA_END) {
+        PAGEError = 0xFF;
+        goto MSG_RSP_ADD_END;
+    }
+    HAL_FLASH_Unlock();
+    PAGEError = 0;
+    for (i=0; i<60; i+=4) {
+        PAGEError += HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr, *pSrc++);
+        addr += 4;
+    }
+    HAL_FLASH_Lock();
+
+MSG_RSP_ADD_END:
+    if (PAGEError != 0) {
+        msg_rsp_error();
+    } else {
+        outBuf[0] = 2; //report_id
+        outBuf[1] = '@'; // response flag
+        outBuf[2] = (uint8_t)~MSG_ADD;
         USBD_HID_SendReport(&USBD_Device, outBuf, USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
     }
 }

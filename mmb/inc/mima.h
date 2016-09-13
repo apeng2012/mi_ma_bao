@@ -17,10 +17,13 @@ typedef enum {
     MSG_STATUS = 0xE1,
     MSG_PERMIT = 0xD2,
     MSG_SET_PERMIT = 0xC3,
+    MSG_ADD    = 0xB4,
     MSG_ERROR  = 0xFF,
 } MSG_T;
 
+#define MIMA_PER_SIZE (64)
 #define MIMA_BASE (FLASH_BASE + 0x10000)
+#define MIMA_END (MIMA_BASE + 0x10000 - 1)
 #define PERMIT_BASE (MIMA_BASE - 1024)
 
 void mima_init(void);
