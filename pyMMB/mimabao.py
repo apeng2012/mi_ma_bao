@@ -115,6 +115,14 @@ class Msg_T(object):
     MSG_ADD    = 0xB4
     MSG_ERROR  = 0xFF
 
+def check_permit(fn):
+    def wrapper(*args, **kw):
+        args[0].status()
+        if args[0].st_ispermit():
+            fn(*args, **kw)
+        else:
+            raise Exception("not permit.")
+    return wrapper
         
 class MiMaBao(_HidTransport):
     """docstring for MiMaBao"""
@@ -161,7 +169,8 @@ class MiMaBao(_HidTransport):
         if tmp != (~Msg_T.MSG_SET_PERMIT)&0xFF:
             return False
         return True
-        
+
+    @check_permit
     def add(self, usedto, name, password):
         lu = len(usedto)
         if lu<3 or lu>20:
