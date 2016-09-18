@@ -11,6 +11,7 @@
 				<Option output="bin\Debug\mmb.elf" />
 				<Option object_output="obj\Debug\" />
 				<Option type="0" />
+				<Option create_hex="1" />
 				<Option compiler="armgcc_eb" />
 				<Option projectDeviceOptionsRelation="0" />
 				<Compiler>

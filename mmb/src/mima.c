@@ -6,6 +6,9 @@ G_FLAG gFlag;
 MSG_T gMsg;
 __ALIGN_BEGIN static uint8_t outBuf[USBD_CUSTOMHID_OUTREPORT_BUF_SIZE] __ALIGN_END;
 
+static uint8_t usedto_search_table[MIMA_NUM];
+static uint16_t usedto_item_index;
+
 /* USB handler declaration */
 /* Handle for USB Full Speed IP */
 extern USBD_HandleTypeDef USBD_Device;
@@ -15,11 +18,20 @@ static void msg_rsp_status(void);
 static void msg_rsp_permit(void);
 static void msg_rsp_set_permit(void);
 static void msg_rsp_add(void);
+static void msg_rsp_get_usedto(void);
+static void msg_rsp_get_item(void);
+static void msg_rsp_password(void);
+static void msg_rsp_MMB(void);
+static uint8_t * my_strstr(uint8_t * str1, uint8_t * str2);
+static uint8_t my_strcmp(uint8_t *str1, uint8_t *str2);
+
 
 void mima_init(void) {
     gMsg = MSG_NONE;
     gFlag.s.permit = 0;
+    gFlag.s.mmb = 0;
     gFlag.s.ver = 1;
+    usedto_item_index = 0;
 
     if (*(uint8_t *)PERMIT_BASE != 0xFF) {
         gFlag.s.initpermit = 1;
@@ -46,23 +58,32 @@ void mima_loop(void) {
         msg_rsp_add();
         gMsg = MSG_NONE;
         break;
+    case MSG_GET_USEDTO:
+        msg_rsp_get_usedto();
+        gMsg = MSG_NONE;
+        break;
+    case MSG_GET_ITEM:
+        msg_rsp_get_item();
+        gMsg = MSG_NONE;
+        break;
+    case MSG_PASSWORD:
+        msg_rsp_password();
+        gMsg = MSG_NONE;
+        break;
+    case MSG_MMB:
+        msg_rsp_MMB();
+        gMsg = MSG_NONE;
+        break;
     default:
         gMsg = MSG_NONE;
         break;
     }
 }
 
-void msg_rsp_error(void) {
-    outBuf[0] = 2; //report_id
-    outBuf[1] = '@'; // response flag
-    outBuf[2] = MSG_ERROR;
-    USBD_HID_SendReport(&USBD_Device, outBuf, USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
-}
-
 static void msg_rsp_status(void) {
     outBuf[0] = 2; //report_id
     outBuf[1] = '@'; // response flag
-    outBuf[2] = (uint8_t)~MSG_STATUS;
+    outBuf[2] = ~(uint8_t)MSG_STATUS;
     outBuf[3] = gFlag.b;
     USBD_HID_SendReport(&USBD_Device, outBuf, USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
 }
@@ -96,14 +117,16 @@ static void msg_rsp_permit(void) {
     if (tmp == 0) {
         gFlag.s.initpermit = 0;
         gFlag.s.permit = 0;
-        msg_rsp_error();
     } else {
         gFlag.s.permit = 1;
-        outBuf[0] = 2; //report_id
-        outBuf[1] = '@'; // response flag
-        outBuf[2] = (uint8_t)~MSG_PERMIT;
-        USBD_HID_SendReport(&USBD_Device, outBuf, USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
+        tmp = 1;
     }
+
+    outBuf[0] = 2; //report_id
+    outBuf[1] = '@'; // response flag
+    outBuf[2] = ~(uint8_t)MSG_PERMIT;
+    outBuf[3] = tmp;
+    USBD_HID_SendReport(&USBD_Device, outBuf, USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
 }
 
 static void msg_rsp_set_permit(void) {
@@ -133,17 +156,17 @@ static void msg_rsp_set_permit(void) {
     }
     HAL_FLASH_Lock();
 
-    HAL_Delay(10000);
-
     if (PAGEError != 0) {
-        msg_rsp_error();
+        i=0;
     } else {
         gFlag.s.initpermit = 1;
-        outBuf[0] = 2; //report_id
-        outBuf[1] = '@'; // response flag
-        outBuf[2] = (uint8_t)~MSG_SET_PERMIT;
-        USBD_HID_SendReport(&USBD_Device, outBuf, USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
+        i=1;
     }
+    outBuf[0] = 2; //report_id
+    outBuf[1] = '@'; // response flag
+    outBuf[2] = ~(uint8_t)MSG_SET_PERMIT;
+    outBuf[3] = i;
+    USBD_HID_SendReport(&USBD_Device, outBuf, USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
 }
 
 static void msg_rsp_add(void) {
@@ -176,11 +199,177 @@ static void msg_rsp_add(void) {
 
 MSG_RSP_ADD_END:
     if (PAGEError != 0) {
-        msg_rsp_error();
+        i = 0;
     } else {
-        outBuf[0] = 2; //report_id
-        outBuf[1] = '@'; // response flag
-        outBuf[2] = (uint8_t)~MSG_ADD;
-        USBD_HID_SendReport(&USBD_Device, outBuf, USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
+        i = 1;
     }
+    outBuf[0] = 2; //report_id
+    outBuf[1] = '@'; // response flag
+    outBuf[2] = ~(uint8_t)MSG_ADD;
+    outBuf[3] = i;
+    USBD_HID_SendReport(&USBD_Device, outBuf, USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
+}
+
+static void msg_rsp_get_usedto(void) {
+    uint8_t *pSrc = &(((USBD_HID_HandleTypeDef*)(USBD_Device.pClassData))->Report_buf[3]);
+    uint16_t ret = 0;
+    uint16_t i;
+    uint8_t *p;
+
+    if (gFlag.s.permit == 0) {
+        goto MSG_RSP_GET_USEDTO_END;
+    }
+
+    for (i=0; i<MIMA_NUM; i++) {
+        if (mima_table[i].usedto[0] == 0xFF) {
+            break;
+        }
+        p = my_strstr(mima_table[i].usedto, pSrc);
+        if (p == 0) {
+            usedto_search_table[i] = 0;
+            continue;
+        } else if (p == mima_table[i].usedto) {
+            ret++;
+            usedto_search_table[i] = 2;
+        } else {
+            ret++;
+            usedto_search_table[i] = 1;
+        }
+    }
+
+MSG_RSP_GET_USEDTO_END:
+    usedto_item_index = 0;
+    outBuf[0] = 2; //report_id
+    outBuf[1] = '@'; // response flag
+    outBuf[2] = ~(uint8_t)MSG_GET_USEDTO;
+    outBuf[3] = ret&0xFF;
+    outBuf[4] = ret>>8;
+    USBD_HID_SendReport(&USBD_Device, outBuf, USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
+}
+
+static void msg_rsp_get_item(void) {
+    uint8_t i;
+    uint8_t *p;
+
+    for (i=0; i<USBD_CUSTOMHID_OUTREPORT_BUF_SIZE; i++) {
+        outBuf[i] = 0xFF;
+    }
+
+    if (gFlag.s.permit == 0) {
+        goto MSG_RSP_GET_ITEM_END;
+    }
+
+    while(usedto_item_index<MIMA_NUM) {
+        if (usedto_search_table[usedto_item_index] != 0) {
+            p = &outBuf[3];
+            for (i=0; i<20; i++) {
+                *p++ = mima_table[usedto_item_index].usedto[i];
+            }
+            usedto_item_index++;
+            break;
+        }
+        usedto_item_index++;
+    }
+
+
+MSG_RSP_GET_ITEM_END:
+    outBuf[0] = 2; //report_id
+    outBuf[1] = '@'; // response flag
+    outBuf[2] = ~(uint8_t)MSG_GET_ITEM;
+    USBD_HID_SendReport(&USBD_Device, outBuf, USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
+}
+
+static void msg_rsp_password(void) {
+    uint8_t *pSrc = &(((USBD_HID_HandleTypeDef*)(USBD_Device.pClassData))->Report_buf[3]);
+    uint16_t i;
+    uint8_t j;
+    uint8_t *p, *pOut;
+
+    for (j=0; j<USBD_CUSTOMHID_OUTREPORT_BUF_SIZE; j++) {
+        outBuf[j] = 0xFF;
+    }
+
+    if (gFlag.s.permit == 0) {
+        goto MSG_RSP_PASSWORD_END;
+    }
+
+    for (i=0; i<MIMA_NUM; i++) {
+        if (mima_table[i].usedto[0] == 0xFF) {
+            break;
+        }
+        if (my_strcmp(pSrc, mima_table[i].usedto) == 1) {
+            p = (uint8_t*)&mima_table[i];
+            pOut = &outBuf[3];
+            for (j=0; j<60; j++) {
+                *pOut++ = *p++;
+            }
+            gFlag.s.mmb = 1;
+            break;
+        }
+    }
+
+MSG_RSP_PASSWORD_END:
+    outBuf[0] = 2; //report_id
+    outBuf[1] = '@'; // response flag
+    outBuf[2] = ~(uint8_t)MSG_PASSWORD;
+    USBD_HID_SendReport(&USBD_Device, outBuf, USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
+}
+
+static void msg_rsp_MMB(void) {
+
+    if ((gFlag.s.permit == 0) || (gFlag.s.mmb != 1)) {
+        goto MSG_RSP_MMB_END;
+    }
+
+MSG_RSP_MMB_END:
+    gFlag.s.mmb = 0;
+    outBuf[0] = 2; //report_id
+    outBuf[1] = '@'; // response flag
+    outBuf[2] = ~(uint8_t)MSG_MMB;
+    USBD_HID_SendReport(&USBD_Device, outBuf, USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
+}
+
+static uint8_t * my_strstr(uint8_t * str1, uint8_t * str2) {
+    uint8_t *cp = str1;
+    uint8_t *s1, *s2;
+    uint8_t i = 0;
+
+    if (*str2 == 0xFF) {
+        return NULL;
+    }
+
+    while(*cp != 0xFF) {
+        s1 = cp;
+        s2 = str2;
+
+        while((*s1 != 0xFF) && (*s2 != 0xFF) && (*s1 == *s2)) {
+            s1++;
+            s2++;
+        }
+
+        if (*s2 == 0xFF) {
+            return cp;
+        }
+        cp++;
+
+        i++;
+        if (i>=20) {
+            return NULL;
+        }
+    }
+
+    return NULL;
+}
+
+static uint8_t my_strcmp(uint8_t *str1, uint8_t *str2) {
+    do {
+        if (*str1++ == *str2++) {
+            if (*str1 == 0xFF) {
+                return 1;
+            }
+            continue;
+        } else {
+            return 0;
+        }
+    }while (1);
 }

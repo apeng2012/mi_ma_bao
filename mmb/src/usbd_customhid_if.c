@@ -104,7 +104,7 @@ USBD_CUSTOM_HID_ItfTypeDef USBD_CustomHID_fops =
   */
 static int8_t CUSTOM_HID_Init(void)
 {
-
+  mima_init();
   return (0);
 }
 
@@ -136,11 +136,7 @@ static int8_t CUSTOM_HID_OutEvent  (uint8_t *pBuf) {
         tmp >>= 4;
         if (tmp == (pBuf[2] & 0x0F)) {
             gMsg = pBuf[2];
-        } else {
-            msg_rsp_error();
         }
-    } else {
-      msg_rsp_error();
     }
 
     return (0);

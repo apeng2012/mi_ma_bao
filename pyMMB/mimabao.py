@@ -59,16 +59,6 @@ class _HidTransport(object):
         self.hid.open_path(self.device)
         self.hid.set_nonblocking(True)
 
-        # determine MMB
-        r = self.hid.write([0x2, ord('#')] + [0xFF] * 62)
-        if r == 64:
-            time.sleep(0.1)
-            data = self.hid.read(64)
-            if data[1] != ord('@'):
-                raise ConnectionError("Unknown HID version")        
-            return
-        raise ConnectionError("Unknown HID version")
-
     def _close(self):
         self.hid.close()
         self.hid = None
@@ -78,7 +68,10 @@ class _HidTransport(object):
         if l > 62:
             raise Exception("Unexpected data length")
 
-        self.hid.write([2, ord('#')] + chunk + [0xFF]*(62-l))
+        data = [2, ord('#')] + chunk + [0xFF]*(62-l)
+        #print 'write:'
+        #print data
+        self.hid.write(data)
 
     def _read_chunk(self):
         start = time.time()
@@ -103,6 +96,8 @@ class _HidTransport(object):
         if len(data) != 64:
             raise Exception("Unexpected chunk size: %d" % len(data))
 
+        #print 'read:'
+        #print data
         return data[2:]
 
 
@@ -113,13 +108,16 @@ class Msg_T(object):
     MSG_PERMIT = 0xD2
     MSG_SET_PERMIT = 0xC3
     MSG_ADD    = 0xB4
-    MSG_ERROR  = 0xFF
+    MSG_GET_USEDTO = 0xA5
+    MSG_GET_ITEM = 0x69
+    MSG_MMB    = 0x78
+    MSG_PASSWORD = 0xF0
 
 def check_permit(fn):
     def wrapper(*args, **kw):
         args[0].status()
         if args[0].st_ispermit():
-            fn(*args, **kw)
+            return fn(*args, **kw)
         else:
             raise Exception("not permit.")
     return wrapper
@@ -130,11 +128,18 @@ class MiMaBao(_HidTransport):
     	self.status_bits = 0
         super(MiMaBao, self).__init__()
 
-    def status(self):
+    def cmd(self, cmd):
         self._open()
-        self._write_chunk([Msg_T.MSG_STATUS])
-        self.status_bits = self._read_chunk()[1]
+        self._write_chunk(cmd)
+        rep = self._read_chunk()
         self._close()
+
+        if rep[0] != (~cmd[0])&0xFF:
+            raise Exception("cmd respond error")
+        return rep[1:]
+
+    def status(self):
+        self.status_bits = self.cmd([Msg_T.MSG_STATUS])[0]
 
     def st_isinitpermit(self):
         return (self.status_bits & 0x01) == 0x01
@@ -147,28 +152,15 @@ class MiMaBao(_HidTransport):
         if not self.st_isinitpermit():
             return None
 
-        self._open()
-        self._write_chunk([Msg_T.MSG_PERMIT] + map(ord, list(password)))
-        tmp = self._read_chunk()[0]
-        self._close()
-
-        if tmp != (~Msg_T.MSG_PERMIT)&0xFF:
-            return False
-    	return True
+        tmp = self.cmd([Msg_T.MSG_PERMIT] + map(ord, list(password)))
+    	return tmp[0] == 1
 
     def set_permit(self, password):
         l = len(password)
         if l<3 or l>60:
             raise Exception("password len error")
 
-        self._open()
-        self._write_chunk([Msg_T.MSG_SET_PERMIT] + map(ord, list(password)))
-        tmp = self._read_chunk()[0]
-        self._close()
-
-        if tmp != (~Msg_T.MSG_SET_PERMIT)&0xFF:
-            return False
-        return True
+        self.cmd([Msg_T.MSG_SET_PERMIT] + map(ord, list(password)))
 
     @check_permit
     def add(self, usedto, name, password):
@@ -182,21 +174,46 @@ class MiMaBao(_HidTransport):
         if lp<3 or lp>20:
             raise Exception("password len error")
 
-        self._open()
-        self._write_chunk([Msg_T.MSG_ADD] \
+        tmp = self.cmd([Msg_T.MSG_ADD] \
             + map(ord, list(usedto)) + [0xFF]*(20-lu) \
             + map(ord, list(name)) + [0xFF]*(20-ln) \
             + map(ord, list(password)) + [0xFF]*(20-lp) )
-        tmp = self._read_chunk()[0]
-        self._close()
 
-        if tmp != (~Msg_T.MSG_ADD)&0xFF:
-            return False
-        return True
+        return tmp[0] == 1
+
+    @check_permit
+    def get_usedto(self, usedto):
+        lu = len(usedto)
+        if lu<1 or lu>20:
+            raise Exception("usedto len error")
+
+        tmp = self.cmd([Msg_T.MSG_GET_USEDTO] + map(ord, list(usedto)))
+
+        return tmp[0] + tmp[1]*256
+
+    def get_item(self):
+        tmp = self.cmd([Msg_T.MSG_GET_ITEM])
+        it = filter(lambda x: x!=0xFF, tmp)
+        return reduce(lambda x,y:x + chr(y), it, '')
+
+    @check_permit
+    def prepare_password(self, usedto):
+        lu = len(usedto)
+        if lu<1 or lu>20:
+            raise Exception("usedto len error")
+
+        tmp = self.cmd([Msg_T.MSG_PASSWORD] + map(ord, list(usedto)))
+        name = filter(lambda x: x!=0xFF, tmp)
+        return reduce(lambda x,y:x + chr(y), name, '')
+
+    @check_permit
+    def MMB(self):
+        tmp = self.cmd([Msg_T.MSG_MMB])
 
 
 if __name__ == '__main__':
     mmb = MiMaBao()
+
     mmb.status()
     print "status_bits: 0x%02x" % mmb.status_bits
 
@@ -206,9 +223,22 @@ if __name__ == '__main__':
 
         print "set permit..."
         mmb.set_permit("apeng")
+        mmb.permit("apeng")
     elif rep:
         print "correct password"
     else:
         print "wrong password"
+        exit()
 
+    if mmb.add("usedto", "name", "password"):
+        print "add one item"
+    else:
+        print "add cmd error"
 
+    cnt = mmb.get_usedto('u')
+    print cnt
+
+    for x in range(0,cnt):
+        print mmb.get_item()
+
+    print mmb.prepare_password("usedto")
