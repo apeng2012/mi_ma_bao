@@ -4,6 +4,15 @@ import getpass
 import mimabao
 
 
+def InitPermit(mmb):
+    password1 = getpass.getpass("This MMB has not yet been used. Set password:")
+    password2 = getpass.getpass("Enter password again:")
+    if password1 != password2:
+        print "password error!"
+        sys.exit()
+    mmb.set_permit(password1)
+
+
 def SetPassword(mmb):
     pass
 
@@ -20,7 +29,12 @@ if __name__ == '__main__':
 
     mmb = mimabao.MiMaBao()
 
-    if mmb.ispermit() != True:
+    mmb.status();
+    if mmb.st_isinitpermit() != True:
+        InitPermit(mmb)
+        print "Run MMB again."
+        sys.exit()
+    if mmb.st_ispermit() != True:
         password = getpass.getpass('Please enter the password:')
         if mmb.permit(password) != True:
             print 'Sorry , wrong password!'
