@@ -125,7 +125,7 @@ def check_permit(fn):
 class MiMaBao(_HidTransport):
     """docstring for MiMaBao"""
     def __init__(self):
-    	self.status_bits = 0
+        self.status_bits = 0
         super(MiMaBao, self).__init__()
 
     def cmd(self, cmd):
@@ -146,16 +146,23 @@ class MiMaBao(_HidTransport):
 
     def st_ispermit(self):
         return (self.status_bits & 0x02) == 0x02
-        
+
     def permit(self, password):
+        """ 校验密码
+         如果初次使用没有设置密码，返回None
+         密码正确返回True，否则False
+         密码宝每次上电，只需输入一次密码，如果校验正确，将一直保持操作许可，直到拔出。
+         如果校验错误，将删除密码宝上一切内容。
+        """
         self.status()
         if not self.st_isinitpermit():
             return None
 
         tmp = self.cmd([Msg_T.MSG_PERMIT] + map(ord, list(password)))
-    	return tmp[0] == 1
+        return tmp[0] == 1
 
     def set_permit(self, password):
+        '''设置密码'''
         l = len(password)
         if l<3 or l>60:
             raise Exception("password len error")
@@ -164,6 +171,7 @@ class MiMaBao(_HidTransport):
 
     @check_permit
     def add(self, usedto, name, password):
+        '''增加一条密码项'''
         lu = len(usedto)
         if lu<3 or lu>20:
             raise Exception("usedto len error")
@@ -183,6 +191,9 @@ class MiMaBao(_HidTransport):
 
     @check_permit
     def get_usedto(self, usedto):
+        '''根据输入字符串，获取匹配的密码项
+        函数返回匹配项的数量
+        迭代调用get_item，返回具体 usedto 字符串 '''
         lu = len(usedto)
         if lu<1 or lu>20:
             raise Exception("usedto len error")
@@ -192,12 +203,14 @@ class MiMaBao(_HidTransport):
         return tmp[0] + tmp[1]*256
 
     def get_item(self):
+        '''获取usedto迭代项。需要先调用get_usedto'''
         tmp = self.cmd([Msg_T.MSG_GET_ITEM])
         it = filter(lambda x: x!=0xFF, tmp)
         return reduce(lambda x,y:x + chr(y), it, '')
 
     @check_permit
     def prepare_password(self, usedto):
+        '''准备密码，与MMB配对使用'''
         lu = len(usedto)
         if lu<1 or lu>20:
             raise Exception("usedto len error")
@@ -208,12 +221,14 @@ class MiMaBao(_HidTransport):
 
     @check_permit
     def MMB(self):
+        '''获取当前密码，与prepare_password配对使用'''
         tmp = self.cmd([Msg_T.MSG_MMB])
 
 
 if __name__ == '__main__':
     mmb = MiMaBao()
 
+    # test read status bits
     mmb.status()
     print "status_bits: 0x%02x" % mmb.status_bits
 
