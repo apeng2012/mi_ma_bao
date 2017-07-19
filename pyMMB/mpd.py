@@ -1,7 +1,48 @@
+import os
 import sys
 import getpass
+import termios
 
 import mimabao
+
+
+def assist_input(mmb):
+    fd = sys.stdin.fileno()
+    old_ttyinfo = termios.tcgetattr(fd)
+    new_ttyinfo = old_ttyinfo[:]
+    new_ttyinfo[3] &= ~termios.ICANON
+    new_ttyinfo[3] &= ~termios.ECHO
+    termios.tcsetattr(fd, termios.TCSANOW, new_ttyinfo)
+
+    os.system('clear')
+    _input = ''
+    cnt = 0
+    first_item = ''
+    while True:
+        ch = os.read(fd, 1)
+        if ch == '\n':
+            if cnt == 0:
+                first_item = ''
+            break
+        if ch == '\x7F': #EDL
+            _input = _input[:-1]
+        else:
+            _input += ch
+
+        os.system('clear')
+        print _input
+
+        cnt = mmb.get_usedto(_input)
+
+        for x in range(0, cnt):
+            if x == 0:
+                first_item = mmb.get_item()
+                print first_item
+            else:
+                print mmb.get_item()
+
+    termios.tcsetattr(fd, termios.TCSANOW, old_ttyinfo)
+    return first_item
 
 
 def InitPermit(mmb):
@@ -18,7 +59,14 @@ def SetPassword(mmb):
 
 
 def GetPassword(mmb):
-    pass
+    usedto = assist_input(mmb)
+    if usedto == '':
+        print "input error, or No what you want."
+        return
+
+    print mmb.prepare_password(usedto)
+    print "In the place where you need to enter the password by the MMB."
+
 
 
 def Backup(mmb):
