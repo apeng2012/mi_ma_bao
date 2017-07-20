@@ -2,8 +2,23 @@ import os
 import sys
 import getpass
 import termios
+import random
 
 import mimabao
+
+
+def AutoPassword(n):
+    ele = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'\
+            'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T'\
+            'U', 'V', 'W', 'X', 'Y', 'Z'\
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'\
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'\
+            'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't'\
+            'u', 'v', 'w', 'x', 'y', 'z', '!', '@', '#', '$'\
+            '%', '^', '&', '*', '-', '+']
+    sub = random.sample(ele, n)
+    ret = ''.join(sub)
+    return ret
 
 
 def assist_input(mmb):
@@ -55,7 +70,42 @@ def InitPermit(mmb):
 
 
 def SetPassword(mmb):
-    pass
+    while True:
+        has_used = False
+        setUse = raw_input('This password is used to:')
+        cnt = mmb.get_usedto(setUse)
+        for x in range(0, cnt):
+            if setUse == mmb.get_item():
+                has_used = True
+                break
+        if has_used:
+            print setUse + " already exits."
+            continue
+        else:
+            break
+
+    setName = raw_input('Please enter your user name:')
+
+    while True:
+        mode = raw_input('Are automatically generated password(y or n):')
+        if mode == 'y':
+            n = int(raw_input('several char?'))
+            setPassword = AutoPassword(n)
+        else:
+            while True:
+                tmp = getpass.getpass('Please enter your user password:')
+                setPassword = getpass.getpass('Please enter your user password again:')
+                if (tmp == setPassword):
+                    break
+
+        #xml.txtToClipboard(setPassword)
+        confirm = raw_input('Make sure that the password is available(y or n):')
+        if confirm == 'y':
+            if mmb.add(setUse, setName, setPassword):
+                print "add one MMB item."
+                break
+            else:
+                print "add password item error."
 
 
 def GetPassword(mmb):
