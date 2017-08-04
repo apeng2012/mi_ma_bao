@@ -41,6 +41,8 @@ def assist_input(mmb):
             break
         if ch == '\x7F': #EDL
             _input = _input[:-1]
+            if len(_input) == 0:
+                continue
         else:
             _input += ch
 
@@ -108,6 +110,21 @@ def SetPassword(mmb):
                 print "add password item error."
 
 
+def wait_MMB():
+    mou = open("/dev/input/mice", 'rb')
+    case = 0
+    while (True):
+        m = mou.read(3)
+        b = ord(m[0])
+        print "%x" % (b)
+        if case == 0:
+            if ( b & 0x4 ) > 0:
+                case += 1
+        if case == 1:
+            if ( b & 0x4 ) == 0:
+                break
+
+
 def GetPassword(mmb):
     usedto = assist_input(mmb)
     if usedto == '':
@@ -116,6 +133,8 @@ def GetPassword(mmb):
 
     print mmb.prepare_password(usedto)
     print "In the place where you need to enter the password by the MMB."
+    wait_MMB()
+    mmb.MMB()
 
 
 
