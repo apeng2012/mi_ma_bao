@@ -130,6 +130,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         KB_state = BTN_Up;
 
         char2KBID(*pKB_str);
+        SEGGER_RTT_printf(0, "USB send char %c \r\n" , *pKB_str);
         pKB_str++;
         len_KB_str--;
         USBD_HID_SendReport(&USBD_Device, KB_USBBuf, HID_KB_SIZE);
