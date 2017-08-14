@@ -32,8 +32,6 @@ static uint8_t my_strcmp(uint8_t *str1, uint8_t *str2);
 
 void mima_init(void) {
     SEGGER_RTT_ConfigUpBuffer(1, NULL, acLogBuf, sizeof(acLogBuf), SEGGER_RTT_MODE_NO_BLOCK_SKIP);
-    SEGGER_RTT_WriteString(0, "SEGGER Real-Time-Terminal Sample\r\n\r\n");
-    SEGGER_RTT_printf(0, "printf Test: %%c,         'S' : %c.\r\n", 'S');
     SEGGER_RTT_WriteString(1, "log start!\r\n");
 
     gMsg = MSG_NONE;
@@ -53,7 +51,7 @@ void mima_loop(void) {
     case MSG_NONE:
         if (g_test != 0) {
             g_test = 0;
-            USB_KB_type("Hello world", 11);
+            USB_KB_type("Hello", 11);
         }
         break;
     case MSG_STATUS:
