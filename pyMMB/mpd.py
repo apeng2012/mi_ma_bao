@@ -116,7 +116,6 @@ def wait_MMB():
     while (True):
         m = mou.read(3)
         b = ord(m[0])
-        print "%x" % (b)
         if case == 0:
             if ( b & 0x4 ) > 0:
                 case += 1
@@ -135,7 +134,7 @@ def GetPassword(mmb):
     print "In the place where you need to enter the password by the MMB."
     wait_MMB()
     mmb.MMB()
-
+    exit()
 
 
 def Backup(mmb):

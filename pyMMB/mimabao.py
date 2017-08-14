@@ -90,6 +90,8 @@ class _HidTransport(object):
 
                 time.sleep(0.001)
                 continue
+            if data[0] != 2: #report id
+                continue
 
             break
 
