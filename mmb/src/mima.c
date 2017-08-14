@@ -1,6 +1,10 @@
 #include "mima.h"
 #include "usbd_conf.h"
 #include "usbd_hid.h"
+#include "SEGGER_RTT.h"
+#include "usbKB.h"
+
+static char acLogBuf[BUFFER_SIZE_UP];
 
 G_FLAG gFlag;
 MSG_T gMsg;
@@ -27,6 +31,9 @@ static uint8_t my_strcmp(uint8_t *str1, uint8_t *str2);
 
 
 void mima_init(void) {
+    SEGGER_RTT_ConfigUpBuffer(1, NULL, acLogBuf, sizeof(acLogBuf), SEGGER_RTT_MODE_NO_BLOCK_SKIP);
+    SEGGER_RTT_WriteString(1, "log start!\r\n");
+
     gMsg = MSG_NONE;
     gFlag.s.permit = 0;
     gFlag.s.mmb = 0;
@@ -38,39 +45,53 @@ void mima_init(void) {
     }
 }
 
+uint8_t g_test = 0;
 void mima_loop(void) {
     switch (gMsg) {
     case MSG_NONE:
+        if (g_test != 0) {
+            g_test = 0;
+            USB_KB_type("Hello", 11);
+        }
         break;
     case MSG_STATUS:
+        g_test = 1;
+        SEGGER_RTT_WriteString(0, "MSG_STATUS\r\n");
         msg_rsp_status();
         gMsg = MSG_NONE;
         break;
     case MSG_PERMIT:
+        SEGGER_RTT_WriteString(0, "MSG_PERMIT\r\n");
         msg_rsp_permit();
         gMsg = MSG_NONE;
         break;
     case MSG_SET_PERMIT:
+        SEGGER_RTT_WriteString(0, "MSG_SET_PERMIT\r\n");
         msg_rsp_set_permit();
         gMsg = MSG_NONE;
         break;
     case MSG_ADD:
+        SEGGER_RTT_WriteString(0, "MSG_ADD\r\n");
         msg_rsp_add();
         gMsg = MSG_NONE;
         break;
     case MSG_GET_USEDTO:
+        SEGGER_RTT_WriteString(0, "MSG_GET_USEDTO\r\n");
         msg_rsp_get_usedto();
         gMsg = MSG_NONE;
         break;
     case MSG_GET_ITEM:
+        SEGGER_RTT_WriteString(0, "MSG_GET_ITEM\r\n");
         msg_rsp_get_item();
         gMsg = MSG_NONE;
         break;
     case MSG_PASSWORD:
+        SEGGER_RTT_WriteString(0, "MSG_PASSWORD\r\n");
         msg_rsp_password();
         gMsg = MSG_NONE;
         break;
     case MSG_MMB:
+        SEGGER_RTT_WriteString(0, "MSG_MMB\r\n");
         msg_rsp_MMB();
         gMsg = MSG_NONE;
         break;
@@ -316,9 +337,22 @@ MSG_RSP_PASSWORD_END:
 }
 
 static void msg_rsp_MMB(void) {
+    MiMa_T *pmm;
+    uint8_t buf[21];
+    uint8_t i=0;
 
     if ((gFlag.s.permit == 0) || (gFlag.s.mmb != 1)) {
         goto MSG_RSP_MMB_END;
+    }
+
+    pmm = (MiMa_T*)&outBuf[3];
+    for (i=0; i<20; i++) {
+        if (pmm->password[i] == 0xFF) {
+            buf[i] = 0;
+            break;
+        } else {
+            buf[i] = pmm->password[i];
+        }
     }
 
 MSG_RSP_MMB_END:
@@ -327,6 +361,13 @@ MSG_RSP_MMB_END:
     outBuf[1] = '@'; // response flag
     outBuf[2] = ~(uint8_t)MSG_MMB;
     USBD_HID_SendReport(&USBD_Device, outBuf, USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
+
+    if (i != 0) {
+        HAL_Delay(10000);
+        SEGGER_RTT_printf(0, "MMB password len %d " , i);
+        SEGGER_RTT_printf(0, "%s \r\n" , buf);
+        USB_KB_type((char*)buf, i);
+    }
 }
 
 static uint8_t * my_strstr(uint8_t * str1, uint8_t * str2) {
